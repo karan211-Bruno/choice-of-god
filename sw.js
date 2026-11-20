@@ -1,4 +1,4 @@
-const CACHE_NAME = 'choice-of-god-v1.0.0';
+const CACHE_NAME = 'choice-of-god-v2.0.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -15,17 +15,14 @@ const CORE_ASSETS = [
   './js/data/bible.js',
   './js/data/guides.js',
   './js/data/items.js',
-  './js/data/stages.js',
+  './js/data/skills.js',
+  './js/data/zones.js',
+  './js/data/dialogues.js',
   './js/engine/i18n.js',
   './js/engine/state.js',
   './js/engine/audio.js',
-  './js/engine/runner.js',
-  './js/games/eden.js',
-  './js/games/ark.js',
-  './js/games/abraham.js',
-  './js/games/plagues.js',
-  './js/games/redsea.js',
-  './js/games/sinai.js',
+  './js/engine/sprites.js',
+  './js/engine/rpgEngine.js',
   './js/ui/dialogs.js',
   './js/app.js'
 ];

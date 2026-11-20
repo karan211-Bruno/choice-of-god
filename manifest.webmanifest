@@ -1,7 +1,7 @@
 {
-  "name": "Choice of God - 신의 선택",
+  "name": "Choice of God - 신의 선택 (Action RPG)",
   "short_name": "Choice of God",
-  "description": "Genesis & Exodus Choice-Driven Multi-Genre Narrative Adventure Game (5 Languages)",
+  "description": "Genesis & Exodus 2D Top-Down Action RPG Adventure (5 Languages)",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

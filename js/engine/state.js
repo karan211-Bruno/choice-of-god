@@ -2,58 +2,60 @@
   'use strict';
   root.COG = root.COG || {};
 
-  var STORAGE_KEY = 'cog_save_v1';
+  var STORAGE_KEY = 'cog_save_v2';
 
   function cloneDefault() {
     return {
       lang: 'ko',
       sound: true,
       xp: 0,
-      bonusScore: 0,
-      stats: {
-        faith: 10,
-        wisdom: 10,
-        mercy: 10
-      },
-      edenRoute: 'undecided', // 'undecided' | 'preserved' | 'fallen'
+      level: 1,
+      skillPoints: 1,
+      skillLevels: { nova: 1, beam: 1, grace: 1 },
+      equipped: { weapon: 'word_of_light', cloak: null, relic: null },
+      unlockedItems: ['word_of_light', 'staff_of_moses'],
       activeGuideId: 'cherubim',
-      activeChapterId: 'eden',
-      activeSubLevel: 1,
-      completedLevels: {}, // { levelId: { stars, bestScore } }
-      unlockedItems: ['word_of_light', 'staff_of_moses']
+      activeZoneId: 'eden',
+      completedQuests: {}, // { questId: true }
+      defeatedBosses: {},  // { bossId: true }
+      collectedNodes: {},  // { nodeId: true }
+      stats: { faith: 10, wisdom: 10, mercy: 10 },
+      edenRoute: 'undecided', // 'undecided' | 'preserved' | 'fallen'
+      score: 0
     };
   }
 
   var stateData = cloneDefault();
-  var changeListeners = [];
+  var listeners = [];
 
   function emit() {
-    for (var i = 0; i < changeListeners.length; i++) {
-      try {
-        changeListeners[i](stateData);
-      } catch (_) {}
+    for (var i = 0; i < listeners.length; i++) {
+      try { listeners[i](stateData); } catch (_) {}
     }
+  }
+
+  function xpForNext(lv) {
+    return 140 + (lv - 1) * 70;
   }
 
   var State = {
     load: function () {
       var raw = null;
-      try {
-        raw = root.localStorage ? root.localStorage.getItem(STORAGE_KEY) : null;
-      } catch (_) {
-        raw = null;
-      }
+      try { raw = root.localStorage ? root.localStorage.getItem(STORAGE_KEY) : null; } catch (_) {}
       if (raw) {
         try {
-          var parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
+          var p = JSON.parse(raw);
+          if (p && typeof p === 'object') {
             var base = cloneDefault();
-            stateData = Object.assign(base, parsed);
-            stateData.stats = Object.assign(base.stats, parsed.stats || {});
-            stateData.completedLevels = parsed.completedLevels || {};
-            stateData.unlockedItems = Array.isArray(parsed.unlockedItems) && parsed.unlockedItems.length
-              ? parsed.unlockedItems
-              : base.unlockedItems;
+            stateData = Object.assign(base, p);
+            stateData.skillLevels = Object.assign(base.skillLevels, p.skillLevels || {});
+            stateData.equipped = Object.assign(base.equipped, p.equipped || {});
+            stateData.stats = Object.assign(base.stats, p.stats || {});
+            stateData.completedQuests = p.completedQuests || {};
+            stateData.defeatedBosses = p.defeatedBosses || {};
+            stateData.collectedNodes = p.collectedNodes || {};
+            stateData.unlockedItems = Array.isArray(p.unlockedItems) && p.unlockedItems.length
+              ? p.unlockedItems : base.unlockedItems;
           }
         } catch (_) {
           stateData = cloneDefault();
@@ -84,6 +86,18 @@
       return stateData;
     },
 
+    getXpNeeded: function () {
+      return xpForNext(stateData.level);
+    },
+
+    getPlayerLevel: function () {
+      return stateData.level;
+    },
+
+    getTotalScore: function () {
+      return Number(stateData.score || 0) + (stateData.edenRoute === 'preserved' ? 5000 : 0);
+    },
+
     setLang: function (lang) {
       stateData.lang = lang;
       this.save();
@@ -96,70 +110,27 @@
       emit();
     },
 
-    setActiveView: function (chapterId, subLevel) {
-      stateData.activeChapterId = chapterId;
-      if (typeof subLevel === 'number') {
-        stateData.activeSubLevel = subLevel;
-      }
+    setActiveZone: function (zoneId) {
+      stateData.activeZoneId = zoneId;
       this.save();
       emit();
     },
 
-    getPlayerLevel: function () {
-      return Math.min(20, 1 + Math.floor(stateData.xp / 180));
-    },
-
-    getTotalScore: function () {
-      var sum = 0;
-      var keys = Object.keys(stateData.completedLevels);
-      for (var i = 0; i < keys.length; i++) {
-        sum += Number(stateData.completedLevels[keys[i]].bestScore || 0);
-      }
-      if (stateData.edenRoute === 'preserved') {
-        sum += 5000;
-      }
-      sum += Number(stateData.bonusScore || 0);
-      return sum;
-    },
-
-    getCompletedCount: function () {
-      return Object.keys(stateData.completedLevels).length;
-    },
-
-    getChapterStars: function (chapterId) {
-      var chapters = (root.COG.DATA && root.COG.DATA.CHAPTERS) || [];
-      var ch = chapters.find(function (c) { return c.id === chapterId; });
-      if (!ch) return { stars: 0, completed: 0, total: 0 };
-      var stars = 0;
-      var completed = 0;
-      for (var i = 0; i < ch.levels.length; i++) {
-        var rec = stateData.completedLevels[ch.levels[i].id];
-        if (rec) {
-          completed++;
-          stars += rec.stars || 1;
-        }
-      }
-      return { stars: stars, completed: completed, total: ch.levels.length };
-    },
-
     getUnlockedGuides: function () {
       var guides = (root.COG.DATA && root.COG.DATA.GUIDES) || [];
-      var lv = this.getPlayerLevel();
-      return guides.filter(function (g) { return lv >= g.unlockLevel; });
+      return guides.filter(function (g) { return stateData.level >= g.unlockLevel; });
     },
 
     getActiveGuide: function () {
       var guides = (root.COG.DATA && root.COG.DATA.GUIDES) || [];
-      var found = guides.find(function (g) { return g.id === stateData.activeGuideId; });
       var unlocked = this.getUnlockedGuides();
-      if (found && unlocked.indexOf(found) !== -1) return found;
-      return unlocked[0] || guides[0];
+      var found = unlocked.find(function (g) { return g.id === stateData.activeGuideId; });
+      return found || unlocked[0] || guides[0];
     },
 
     setActiveGuide: function (guideId) {
       var unlocked = this.getUnlockedGuides();
-      var ok = unlocked.some(function (g) { return g.id === guideId; });
-      if (ok) {
+      if (unlocked.some(function (g) { return g.id === guideId; })) {
         stateData.activeGuideId = guideId;
         this.save();
         emit();
@@ -168,10 +139,52 @@
       return false;
     },
 
+    getDerivedStats: function () {
+      var maxHp = 120 + (stateData.level - 1) * 18;
+      var maxMp = 80 + (stateData.level - 1) * 10;
+      var atk = 18 + (stateData.level - 1) * 3;
+      var def = 3 + (stateData.level - 1) * 1;
+      var speed = 235;
+      var mpRegen = 4.5;
+      var scorePct = 0;
+
+      var items = (root.COG.DATA && root.COG.DATA.ITEMS) || [];
+      ['weapon', 'cloak', 'relic'].forEach(function (slot) {
+        var id = stateData.equipped[slot];
+        if (!id) return;
+        var it = items.find(function (x) { return x.id === id; });
+        if (it && it.stats) {
+          atk += it.stats.atk || 0;
+          def += it.stats.def || 0;
+          maxHp += it.stats.hp || 0;
+          maxMp += it.stats.mp || 0;
+          speed += it.stats.speed || 0;
+        }
+      });
+
+      var guide = this.getActiveGuide();
+      if (guide && guide.buff) {
+        atk += guide.buff.atk || 0;
+        def += guide.buff.def || 0;
+        speed += guide.buff.speed || 0;
+        mpRegen += guide.buff.mpRegen || 0;
+        scorePct += guide.buff.scorePct || 0;
+      }
+
+      return { maxHp: maxHp, maxMp: maxMp, atk: atk, def: def, speed: speed, mpRegen: mpRegen, scorePct: scorePct };
+    },
+
     unlockItem: function (itemId) {
       if (!itemId) return false;
+      var items = (root.COG.DATA && root.COG.DATA.ITEMS) || [];
+      var item = items.find(function (i) { return i.id === itemId; });
+      if (!item) return false;
       if (stateData.unlockedItems.indexOf(itemId) === -1) {
         stateData.unlockedItems.push(itemId);
+        // Auto-equip if slot is empty or strictly stronger
+        if (!stateData.equipped[item.slot]) {
+          stateData.equipped[item.slot] = itemId;
+        }
         this.save();
         emit();
         return true;
@@ -179,74 +192,57 @@
       return false;
     },
 
-    addStat: function (delta) {
-      if (!delta) return;
-      if (delta.faith) stateData.stats.faith = Math.max(0, stateData.stats.faith + delta.faith);
-      if (delta.wisdom) stateData.stats.wisdom = Math.max(0, stateData.stats.wisdom + delta.wisdom);
-      if (delta.mercy) stateData.stats.mercy = Math.max(0, stateData.stats.mercy + delta.mercy);
-      if (delta.bonusScore) stateData.bonusScore += delta.bonusScore;
+    equipItem: function (itemId) {
+      if (stateData.unlockedItems.indexOf(itemId) === -1) return false;
+      var items = (root.COG.DATA && root.COG.DATA.ITEMS) || [];
+      var item = items.find(function (i) { return i.id === itemId; });
+      if (!item) return false;
+      stateData.equipped[item.slot] = itemId;
       this.save();
       emit();
+      return true;
     },
 
-    setEdenRoute: function (route) {
-      if (route === 'preserved' || route === 'fallen' || route === 'undecided') {
-        stateData.edenRoute = route;
-        if (route === 'preserved') {
-          this.unlockItem('tree_of_life_leaf');
-        } else if (route === 'fallen') {
-          this.unlockItem('garment_of_skin');
-        }
-        this.save();
-        emit();
-      }
+    upgradeSkill: function (skillId) {
+      var skills = (root.COG.DATA && root.COG.DATA.SKILLS) || [];
+      var sk = skills.find(function (s) { return s.id === skillId; });
+      if (!sk || stateData.skillPoints <= 0) return false;
+      var cur = stateData.skillLevels[skillId] || 1;
+      if (cur >= sk.maxLevel) return false;
+      stateData.skillLevels[skillId] = cur + 1;
+      stateData.skillPoints -= 1;
+      this.save();
+      emit();
+      return true;
     },
 
-    completeLevel: function (levelObj, earnedScore, stars, extra) {
-      var prevLevel = this.getPlayerLevel();
-      var prevUnlockedGuides = this.getUnlockedGuides().map(function (g) { return g.id; });
-      var levelId = levelObj.id;
-      var prev = stateData.completedLevels[levelId];
-      var cleanStars = Math.max(1, Math.min(3, stars || 1));
-      var cleanScore = Math.max(100, Math.round(earnedScore || levelObj.baseScore || 500));
+    addRewards: function (xpGain, scoreGain, statDelta) {
+      var guide = this.getActiveGuide();
+      var mult = 1 + ((guide && guide.buff && guide.buff.scorePct) || 0) / 100;
+      var finalScore = Math.round((scoreGain || 0) * mult);
+      stateData.score += finalScore;
+      stateData.xp += Number(xpGain || 0);
 
-      if (!prev) {
-        stateData.completedLevels[levelId] = { stars: cleanStars, bestScore: cleanScore };
-        stateData.xp += Number(levelObj.xp || 140);
-      } else {
-        stateData.completedLevels[levelId] = {
-          stars: Math.max(prev.stars, cleanStars),
-          bestScore: Math.max(prev.bestScore, cleanScore)
-        };
-        stateData.xp += Math.round(Number(levelObj.xp || 100) * 0.35);
+      var prevLv = stateData.level;
+      var prevGuides = this.getUnlockedGuides().map(function (g) { return g.id; });
+
+      while (stateData.xp >= xpForNext(stateData.level) && stateData.level < 20) {
+        stateData.xp -= xpForNext(stateData.level);
+        stateData.level += 1;
+        stateData.skillPoints += 1;
       }
 
-      if (extra && extra.faith) stateData.stats.faith += extra.faith;
-      if (extra && extra.wisdom) stateData.stats.wisdom += extra.wisdom;
-      if (extra && extra.mercy) stateData.stats.mercy += extra.mercy;
-
-      var newItemUnlocked = null;
-      var chapters = (root.COG.DATA && root.COG.DATA.CHAPTERS) || [];
-      var ch = chapters.find(function (c) { return c.id === levelObj.chapterId; });
-      if (ch && levelObj.subLevel === 4) {
-        if (ch.id === 'eden') {
-          var itemToGive = stateData.edenRoute === 'fallen' ? ch.altRewardItem : ch.rewardItem;
-          if (this.unlockItem(itemToGive)) {
-            newItemUnlocked = itemToGive;
-          }
-        } else if (ch.rewardItem) {
-          if (this.unlockItem(ch.rewardItem)) {
-            newItemUnlocked = ch.rewardItem;
-          }
-        }
+      if (statDelta) {
+        if (statDelta.faith) stateData.stats.faith += statDelta.faith;
+        if (statDelta.wisdom) stateData.stats.wisdom += statDelta.wisdom;
+        if (statDelta.mercy) stateData.stats.mercy += statDelta.mercy;
       }
 
-      var newLevel = this.getPlayerLevel();
       var newGuides = [];
-      if (newLevel > prevLevel) {
+      if (stateData.level > prevLv) {
         var nowGuides = this.getUnlockedGuides();
         for (var i = 0; i < nowGuides.length; i++) {
-          if (prevUnlockedGuides.indexOf(nowGuides[i].id) === -1) {
+          if (prevGuides.indexOf(nowGuides[i].id) === -1) {
             newGuides.push(nowGuides[i]);
             stateData.activeGuideId = nowGuides[i].id;
           }
@@ -255,19 +251,69 @@
 
       this.save();
       emit();
-
       return {
-        totalScore: this.getTotalScore(),
-        playerLevel: newLevel,
-        newItemUnlocked: newItemUnlocked,
-        newGuidesUnlocked: newGuides
+        leveledUp: stateData.level > prevLv,
+        newLevel: stateData.level,
+        newGuides: newGuides,
+        awardedScore: finalScore
       };
     },
 
-    onChange: function (fn) {
-      if (typeof fn === 'function') {
-        changeListeners.push(fn);
+    markNodeCollected: function (nodeId) {
+      if (stateData.collectedNodes[nodeId]) return false;
+      stateData.collectedNodes[nodeId] = true;
+      this.save();
+      emit();
+      return true;
+    },
+
+    completeQuest: function (questObj) {
+      if (!questObj || stateData.completedQuests[questObj.id]) return null;
+      stateData.completedQuests[questObj.id] = true;
+      var res = this.addRewards(questObj.xp || 100, questObj.score || 300, { faith: 2 });
+      this.save();
+      emit();
+      return res;
+    },
+
+    defeatBoss: function (zoneObj) {
+      if (!zoneObj || !zoneObj.boss) return null;
+      var firstTime = !stateData.defeatedBosses[zoneObj.boss.id];
+      stateData.defeatedBosses[zoneObj.boss.id] = true;
+
+      if (zoneObj.id === 'eden' && stateData.edenRoute === 'undecided') {
+        stateData.edenRoute = 'preserved';
       }
+
+      var itemToUnlock = zoneObj.id === 'eden' && stateData.edenRoute === 'fallen'
+        ? zoneObj.altRewardItem
+        : zoneObj.rewardItem;
+      var unlockedNewItem = this.unlockItem(itemToUnlock) ? itemToUnlock : null;
+
+      var qBoss = zoneObj.quests.find(function (q) { return q.type === 'boss'; });
+      if (qBoss) stateData.completedQuests[qBoss.id] = true;
+
+      var rewardRes = this.addRewards(
+        firstTime ? zoneObj.boss.xp : Math.round(zoneObj.boss.xp * 0.4),
+        firstTime ? zoneObj.boss.score : Math.round(zoneObj.boss.score * 0.35),
+        { faith: 5, wisdom: 3 }
+      );
+      rewardRes.unlockedItem = unlockedNewItem;
+      return rewardRes;
+    },
+
+    setEdenRoute: function (route) {
+      if (route === 'preserved' || route === 'fallen' || route === 'undecided') {
+        stateData.edenRoute = route;
+        if (route === 'preserved') this.unlockItem('tree_of_life_leaf');
+        else if (route === 'fallen') this.unlockItem('garment_of_skin');
+        this.save();
+        emit();
+      }
+    },
+
+    onChange: function (fn) {
+      if (typeof fn === 'function') listeners.push(fn);
     }
   };
 

@@ -2,17 +2,13 @@
   'use strict';
   root.COG = root.COG || {};
 
-  function getEl(id) {
-    return document.getElementById(id);
-  }
+  function el(id) { return document.getElementById(id); }
 
   function announce(msg) {
-    var el = getEl('live-announcer');
-    if (!el) return;
-    el.textContent = '';
-    setTimeout(function () {
-      el.textContent = msg;
-    }, 30);
+    var node = el('live-announcer');
+    if (!node) return;
+    node.textContent = '';
+    setTimeout(function () { node.textContent = msg; }, 25);
   }
 
   function installLightDismissFallback() {
@@ -23,51 +19,42 @@
       var r = dialog.getBoundingClientRect();
       return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
     };
-
-    var anyDialogs = document.querySelectorAll('dialog[closedby="any"]');
-    for (var i = 0; i < anyDialogs.length; i++) {
+    var dlgs = document.querySelectorAll('dialog[closedby="any"]');
+    for (var i = 0; i < dlgs.length; i++) {
       (function (dlg) {
         var pressedOutside = false;
-        dlg.addEventListener('pointerdown', function (e) {
-          pressedOutside = outside(e, dlg);
-        });
+        dlg.addEventListener('pointerdown', function (e) { pressedOutside = outside(e, dlg); });
         dlg.addEventListener('pointerup', function (e) {
-          if (pressedOutside && outside(e, dlg)) {
-            dlg.close();
-          }
+          if (pressedOutside && outside(e, dlg)) dlg.close();
           pressedOutside = false;
         });
-      })(anyDialogs[i]);
+      })(dlgs[i]);
     }
   }
 
   var activeBookFilter = 'all';
+  var activeDialogueSession = null;
 
   var Dialogs = {
     init: function (handlers) {
       installLightDismissFallback();
 
-      var closeButtons = document.querySelectorAll('[data-close-dialog]');
-      for (var i = 0; i < closeButtons.length; i++) {
-        closeButtons[i].addEventListener('click', function () {
-          var id = this.getAttribute('data-close-dialog');
-          var d = getEl(id);
+      var closes = document.querySelectorAll('[data-close-dialog]');
+      for (var i = 0; i < closes.length; i++) {
+        closes[i].addEventListener('click', function () {
+          var d = el(this.getAttribute('data-close-dialog'));
           if (d && d.open) d.close();
         });
       }
 
-      var allDlgs = document.querySelectorAll('dialog');
-      for (var j = 0; j < allDlgs.length; j++) {
+      var all = document.querySelectorAll('dialog');
+      for (var j = 0; j < all.length; j++) {
         (function (dlg) {
           dlg.addEventListener('close', function () {
             dlg.returnValue = '';
+            if (handlers && handlers.onDialogClosed) handlers.onDialogClosed();
           });
-          if (dlg.getAttribute('closedby') === 'none') {
-            dlg.addEventListener('cancel', function (e) {
-              e.preventDefault();
-            });
-          }
-        })(allDlgs[j]);
+        })(all[j]);
       }
 
       var langBtns = document.querySelectorAll('[data-set-lang]');
@@ -79,20 +66,20 @@
         });
       }
 
-      var soundBtn = getEl('dlg-sound-toggle');
-      if (soundBtn) {
-        soundBtn.addEventListener('click', function () {
+      var sndBtn = el('dlg-sound-toggle');
+      if (sndBtn) {
+        sndBtn.addEventListener('click', function () {
           if (handlers && handlers.onToggleSound) handlers.onToggleSound();
           Dialogs.refreshSettings();
         });
       }
 
-      var resetBtn = getEl('dlg-reset-btn');
-      if (resetBtn) {
-        resetBtn.addEventListener('click', function () {
+      var rstBtn = el('dlg-reset-btn');
+      if (rstBtn) {
+        rstBtn.addEventListener('click', function () {
           if (window.confirm(root.COG.i18n.t('ui.resetConfirm'))) {
             if (handlers && handlers.onReset) handlers.onReset();
-            var s = getEl('dlg-settings');
+            var s = el('dlg-settings');
             if (s && s.open) s.close();
           }
         });
@@ -101,42 +88,208 @@
 
     announce: announce,
 
-    openSettings: function () {
-      this.refreshSettings();
-      var d = getEl('dlg-settings');
-      if (d && !d.open) d.showModal();
-    },
-
-    refreshSettings: function () {
-      var curLang = root.COG.i18n.getLang();
-      var btns = document.querySelectorAll('[data-set-lang]');
-      for (var i = 0; i < btns.length; i++) {
-        var code = btns[i].getAttribute('data-set-lang');
-        btns[i].classList.toggle('is-active', code === curLang);
-      }
-      var soundBtn = getEl('dlg-sound-toggle');
-      if (soundBtn) {
-        var on = root.COG.Audio.isEnabled();
-        soundBtn.textContent = (on ? '🔊 ' : '🔇 ') + root.COG.i18n.t(on ? 'ui.soundOn' : 'ui.soundOff');
+    openModal: function (id) {
+      var d = el(id);
+      if (d && !d.open) {
+        root.COG.RpgEngine.pause();
+        d.showModal();
       }
     },
 
-    openHelp: function () {
-      var d = getEl('dlg-help');
-      if (d && !d.open) d.showModal();
+    openWorldMap: function (onTravel) {
+      this.renderWorldMap(onTravel);
+      this.openModal('dlg-map');
     },
 
-    openCodex: function (filterBook) {
-      if (filterBook) activeBookFilter = filterBook;
+    renderWorldMap: function (onTravel) {
+      var t = function (k) { return root.COG.i18n.t(k); };
+      var st = root.COG.State.get();
+      var grid = el('world-map-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      (root.COG.DATA.ZONES || []).forEach(function (z) {
+        var isCur = st.activeZoneId === z.id;
+        var doneCount = z.quests.filter(function (q) { return !!st.completedQuests[q.id]; }).length;
+
+        var card = document.createElement('article');
+        card.className = 'zone-card' + (isCur ? ' is-current' : '');
+        card.style.borderTopColor = z.accent;
+        card.style.borderTopWidth = '4px';
+
+        var title = document.createElement('h3');
+        title.textContent = t('zones.' + z.id + '.title');
+
+        var meta = document.createElement('p');
+        meta.textContent = t('zones.' + z.id + '.period') + ' · ' + t('viewpoints.' + z.viewpoint);
+
+        var desc = document.createElement('p');
+        desc.textContent = t('zones.' + z.id + '.desc');
+
+        var prog = document.createElement('p');
+        prog.style.color = '#fde68a';
+        prog.textContent = t('ui.questsDone') + ': ' + doneCount + '/' + z.quests.length +
+          (z.isHighestScoreZone ? ' · 👑 ' + t('ui.highestScoreBadge') : '');
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = isCur ? 'btn-secondary' : 'btn-primary-gold';
+        btn.textContent = isCur ? t('ui.currentZone') : t('ui.travelToZone');
+        btn.addEventListener('click', function () {
+          var dlg = el('dlg-map');
+          if (dlg && dlg.open) dlg.close();
+          if (onTravel) onTravel(z.id);
+        });
+
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(desc);
+        card.appendChild(prog);
+        card.appendChild(btn);
+        grid.appendChild(card);
+      });
+    },
+
+    openCharacterSheet: function (onUpdate) {
+      this.renderCharacterSheet(onUpdate);
+      this.openModal('dlg-char');
+    },
+
+    renderCharacterSheet: function (onUpdate) {
+      var t = function (k, v) { return root.COG.i18n.t(k, v); };
+      var st = root.COG.State.get();
+      var drv = root.COG.State.getDerivedStats();
+
+      var sum = el('char-stats-summary');
+      if (sum) {
+        sum.innerHTML =
+          '<span class="inline-pill">' + t('ui.level') + ' ' + st.level + '</span>' +
+          '<span class="inline-pill">' + t('ui.atk') + ' ' + drv.atk + '</span>' +
+          '<span class="inline-pill">' + t('ui.def') + ' ' + drv.def + '</span>' +
+          '<span class="inline-pill">' + t('ui.hp') + ' ' + drv.maxHp + '</span>' +
+          '<span class="inline-pill">' + t('ui.mp') + ' ' + drv.maxMp + '</span>' +
+          '<span class="inline-pill">' + t('ui.faith') + ' ' + st.stats.faith + '</span>' +
+          '<span class="inline-pill">' + t('ui.wisdom') + ' ' + st.stats.wisdom + '</span>' +
+          '<span class="inline-pill">' + t('ui.mercy') + ' ' + st.stats.mercy + '</span>';
+      }
+
+      var spBadge = el('char-sp-badge');
+      if (spBadge) spBadge.textContent = t('ui.skillPoints') + ': ' + st.skillPoints;
+
+      var skillsList = el('char-skills-list');
+      if (skillsList) {
+        skillsList.innerHTML = '';
+        (root.COG.DATA.SKILLS || []).forEach(function (sk) {
+          var lv = st.skillLevels[sk.id] || 1;
+          var row = document.createElement('div');
+          row.className = 'info-card';
+          var left = document.createElement('div');
+          left.innerHTML = '<div class="codex-ref">[' + sk.hotkey + '] ' + t('skills.' + sk.id + '.name') + ' (Lv.' + lv + '/' + sk.maxLevel + ')</div>' +
+            '<p class="codex-text">' + t('skills.' + sk.id + '.desc') + '</p>';
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn-primary-gold';
+          btn.disabled = st.skillPoints <= 0 || lv >= sk.maxLevel;
+          btn.textContent = lv >= sk.maxLevel ? t('ui.maxed') : t('ui.upgradeSkill');
+          btn.addEventListener('click', function () {
+            if (root.COG.State.upgradeSkill(sk.id)) {
+              root.COG.Audio.play('levelup');
+              Dialogs.renderCharacterSheet(onUpdate);
+              if (onUpdate) onUpdate();
+            }
+          });
+          row.appendChild(left);
+          row.appendChild(btn);
+          skillsList.appendChild(row);
+        });
+      }
+
+      var slotsEl = el('char-equipped-slots');
+      if (slotsEl) {
+        var slotMap = [
+          { key: 'weapon', label: t('ui.slotWeapon') },
+          { key: 'cloak', label: t('ui.slotCloak') },
+          { key: 'relic', label: t('ui.slotRelic') }
+        ];
+        slotsEl.innerHTML = '';
+        slotMap.forEach(function (sl) {
+          var id = st.equipped[sl.key];
+          var box = document.createElement('div');
+          box.className = 'equip-slot-box';
+          box.innerHTML = '<strong>' + sl.label + '</strong><div>' + (id ? t('items.' + id + '.name') : t('ui.slotEmpty')) + '</div>';
+          slotsEl.appendChild(box);
+        });
+      }
+
+      var itemsEl = el('char-items-list');
+      if (itemsEl) {
+        itemsEl.innerHTML = '';
+        (root.COG.DATA.ITEMS || []).forEach(function (it) {
+          var owned = st.unlockedItems.indexOf(it.id) !== -1;
+          var isEq = st.equipped[it.slot] === it.id;
+          var row = document.createElement('div');
+          row.className = 'info-card';
+          var left = document.createElement('div');
+          left.innerHTML = '<div class="codex-ref">' + t('items.' + it.id + '.name') + ' [' + t(owned ? 'ui.unlocked' : 'ui.locked') + ']</div>' +
+            '<p class="codex-text">' + t('items.' + it.id + '.desc') + '</p>';
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = isEq ? 'btn-secondary' : 'btn-primary-gold';
+          btn.disabled = !owned || isEq;
+          btn.textContent = isEq ? t('ui.equipped') : t('ui.equip');
+          btn.addEventListener('click', function () {
+            if (root.COG.State.equipItem(it.id)) {
+              root.COG.Audio.play('click');
+              Dialogs.renderCharacterSheet(onUpdate);
+              if (onUpdate) onUpdate();
+            }
+          });
+          row.appendChild(left);
+          row.appendChild(btn);
+          itemsEl.appendChild(row);
+        });
+      }
+
+      var guidesEl = el('char-guides-list');
+      if (guidesEl) {
+        guidesEl.innerHTML = '';
+        (root.COG.DATA.GUIDES || []).forEach(function (g) {
+          var unlocked = st.level >= g.unlockLevel;
+          var active = st.activeGuideId === g.id;
+          var row = document.createElement('div');
+          row.className = 'info-card';
+          var left = document.createElement('div');
+          left.innerHTML = '<div class="codex-ref">' + t('guides.' + g.id + '.name') + ' — ' + t('guides.' + g.id + '.role') + '</div>' +
+            '<p class="codex-text">' + (unlocked ? t('guides.' + g.id + '.desc') : t('ui.requiresLevel', { lv: g.unlockLevel })) + '</p>';
+          row.appendChild(left);
+          if (unlocked) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = active ? 'btn-secondary' : 'btn-primary-gold';
+            btn.disabled = active;
+            btn.textContent = active ? t('ui.selected') : t('ui.selectGuide');
+            btn.addEventListener('click', function () {
+              root.COG.State.setActiveGuide(g.id);
+              root.COG.Audio.play('click');
+              Dialogs.renderCharacterSheet(onUpdate);
+              if (onUpdate) onUpdate();
+            });
+            row.appendChild(btn);
+          }
+          guidesEl.appendChild(row);
+        });
+      }
+    },
+
+    openCodex: function () {
       this.renderCodex();
-      var d = getEl('dlg-codex');
-      if (d && !d.open) d.showModal();
+      this.openModal('dlg-codex');
     },
 
     renderCodex: function () {
       var t = function (k) { return root.COG.i18n.t(k); };
-      var filtersEl = getEl('codex-filters');
-      var listEl = getEl('codex-list');
+      var filtersEl = el('codex-filters');
+      var listEl = el('codex-list');
       if (!filtersEl || !listEl) return;
 
       var books = [
@@ -158,202 +311,143 @@
         filtersEl.appendChild(btn);
       });
 
-      var entries = (root.COG.DATA && root.COG.DATA.BIBLE) || [];
-      var filtered = entries.filter(function (e) {
-        return activeBookFilter === 'all' || e.book === activeBookFilter;
-      });
       listEl.innerHTML = '';
-      filtered.forEach(function (entry) {
+      (root.COG.DATA.BIBLE || []).forEach(function (entry) {
+        if (activeBookFilter !== 'all' && entry.book !== activeBookFilter) return;
         var box = document.createElement('article');
         box.className = 'codex-entry';
-        var ref = document.createElement('div');
-        ref.className = 'codex-ref';
-        ref.textContent = t('bible.' + entry.id + '.ref');
-        var txt = document.createElement('p');
-        txt.className = 'codex-text';
-        txt.textContent = t('bible.' + entry.id + '.text');
-        box.appendChild(ref);
-        box.appendChild(txt);
+        box.innerHTML = '<div class="codex-ref">' + t('bible.' + entry.id + '.ref') + '</div>' +
+          '<p class="codex-text">' + t('bible.' + entry.id + '.text') + '</p>';
         listEl.appendChild(box);
       });
     },
 
-    openInventory: function (onGuideSelected) {
-      this.renderInventory(onGuideSelected);
-      var d = getEl('dlg-inventory');
-      if (d && !d.open) d.showModal();
+    openSettings: function () {
+      this.refreshSettings();
+      this.openModal('dlg-settings');
     },
 
-    renderInventory: function (onGuideSelected) {
-      var t = function (k, v) { return root.COG.i18n.t(k, v); };
-      var state = root.COG.State.get();
-      var lv = root.COG.State.getPlayerLevel();
-      var guidesEl = getEl('guides-list');
-      var itemsEl = getEl('items-list');
-      if (!guidesEl || !itemsEl) return;
-
-      guidesEl.innerHTML = '';
-      (root.COG.DATA.GUIDES || []).forEach(function (g) {
-        var unlocked = lv >= g.unlockLevel;
-        var active = state.activeGuideId === g.id;
-        var card = document.createElement('div');
-        card.className = 'info-card';
-
-        var title = document.createElement('div');
-        title.className = 'codex-ref';
-        title.textContent = g.icon + ' ' + t('guides.' + g.id + '.name') + ' — ' + t('guides.' + g.id + '.role');
-
-        var desc = document.createElement('p');
-        desc.className = 'codex-text';
-        desc.textContent = unlocked
-          ? t('guides.' + g.id + '.desc') + ' ' + t('guides.' + g.id + '.quote')
-          : t('ui.requiresLevel', { lv: g.unlockLevel });
-
-        card.appendChild(title);
-        card.appendChild(desc);
-
-        if (unlocked) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = active ? 'btn-primary-gold mt-lg' : 'btn-ghost mt-lg';
-          btn.style.marginTop = '8px';
-          btn.textContent = active ? t('ui.selected') : t('ui.selectGuide');
-          btn.addEventListener('click', function () {
-            root.COG.State.setActiveGuide(g.id);
-            Dialogs.renderInventory(onGuideSelected);
-            if (onGuideSelected) onGuideSelected(g);
-          });
-          card.appendChild(btn);
-        }
-        guidesEl.appendChild(card);
-      });
-
-      itemsEl.innerHTML = '';
-      (root.COG.DATA.ITEMS || []).forEach(function (item) {
-        var has = state.unlockedItems.indexOf(item.id) !== -1;
-        var card = document.createElement('div');
-        card.className = 'info-card';
-        var title = document.createElement('div');
-        title.className = 'codex-ref';
-        title.textContent = item.icon + ' ' + t('items.' + item.id + '.name') + ' [' + t(has ? 'ui.unlocked' : 'ui.locked') + ']';
-        var desc = document.createElement('p');
-        desc.className = 'codex-text';
-        desc.textContent = t('items.' + item.id + '.desc') + ' (' + t('items.' + item.id + '.effectLabel') + ')';
-        card.appendChild(title);
-        card.appendChild(desc);
-        itemsEl.appendChild(card);
-      });
-    },
-
-    openEdenChoice: function (callbacks) {
-      var d = getEl('dlg-eden-choice');
-      var verseEl = getEl('eden-choice-verse');
-      if (verseEl) {
-        verseEl.textContent = root.COG.i18n.t('bible.gen_2_16_17.ref') + ' — “' + root.COG.i18n.t('bible.gen_2_16_17.text') + '”';
+    refreshSettings: function () {
+      var cur = root.COG.i18n.getLang();
+      var btns = document.querySelectorAll('[data-set-lang]');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('is-active', btns[i].getAttribute('data-set-lang') === cur);
       }
-      var btnResist = getEl('btn-eden-resist');
-      var btnEat = getEl('btn-eden-eat');
-
-      btnResist.onclick = function () {
-        if (d.open) d.close();
-        if (callbacks && callbacks.onResist) callbacks.onResist();
-      };
-      btnEat.onclick = function () {
-        if (d.open) d.close();
-        if (callbacks && callbacks.onEat) callbacks.onEat();
-      };
-      if (d && !d.open) d.showModal();
+      var snd = el('dlg-sound-toggle');
+      if (snd) {
+        var on = root.COG.Audio.isEnabled();
+        snd.textContent = (on ? '🔊 ' : '🔇 ') + root.COG.i18n.t(on ? 'ui.soundOn' : 'ui.soundOff');
+      }
     },
 
-    openResult: function (opts) {
+    openHelp: function () {
+      this.openModal('dlg-help');
+    },
+
+    openEnding: function () {
       var t = function (k) { return root.COG.i18n.t(k); };
-      var d = getEl('dlg-result');
-      var titleEl = getEl('dlg-result-title');
-      var starsEl = getEl('dlg-result-stars');
-      var sumEl = getEl('dlg-result-summary');
-      var verseEl = getEl('dlg-result-verse');
-      var unlocksEl = getEl('dlg-result-unlocks');
-      var btnMap = getEl('btn-result-map');
-      var btnRetry = getEl('btn-result-retry');
-      var btnNext = getEl('btn-result-next');
-
-      titleEl.textContent = opts.win ? (opts.customTitle || t('ui.levelClear')) : t('ui.levelFailed');
-      if (opts.win) {
-        var filled = '';
-        for (var i = 0; i < 3; i++) filled += i < (opts.stars || 1) ? '★' : '☆';
-        starsEl.textContent = filled + '  +' + (opts.earnedScore || 0) + ' ' + t('ui.score');
-      } else {
-        starsEl.textContent = '💔';
+      var st = root.COG.State.get();
+      var bossesDefeated = Object.keys(st.defeatedBosses).length;
+      var key = 'pilgrim';
+      var emblem = '🕊️';
+      if (st.edenRoute === 'preserved' && bossesDefeated >= 3) {
+        key = 'crown';
+        emblem = '👑';
+      } else if (st.defeatedBosses['boss_amalek'] || bossesDefeated >= 3) {
+        key = 'covenant';
+        emblem = '📜';
       }
-      sumEl.textContent = opts.summary || '';
 
-      if (opts.scriptureId) {
-        verseEl.textContent = t('bible.' + opts.scriptureId + '.ref') + ' — “' + t('bible.' + opts.scriptureId + '.text') + '”';
+      el('ending-emblem').textContent = emblem;
+      el('ending-headline').textContent = t('endings.' + key + '.title');
+      el('ending-desc').textContent = t('endings.' + key + '.desc');
+      el('ending-stats').innerHTML =
+        '<span class="inline-pill">' + t('ui.score') + ': ' + root.COG.State.getTotalScore().toLocaleString() + '</span>' +
+        '<span class="inline-pill">' + t('ui.level') + ' ' + st.level + '</span>' +
+        '<span class="inline-pill">' + t('ui.faith') + ': ' + st.stats.faith + '</span>' +
+        '<span class="inline-pill">' + t('ui.wisdom') + ': ' + st.stats.wisdom + '</span>' +
+        '<span class="inline-pill">' + t('ui.mercy') + ': ' + st.stats.mercy + '</span>';
+
+      this.openModal('dlg-ending');
+    },
+
+    openDialogueBox: function (dialogueId, callbacks) {
+      var dlgData = (root.COG.DATA.DIALOGUES || {})[dialogueId];
+      if (!dlgData) {
+        if (callbacks && callbacks.onClose) callbacks.onClose();
+        return;
+      }
+      activeDialogueSession = { data: dlgData, nodeId: 'start', callbacks: callbacks };
+      this.renderDialogueNode();
+    },
+
+    refreshActiveDialogue: function () {
+      if (activeDialogueSession) this.renderDialogueNode();
+    },
+
+    renderDialogueNode: function () {
+      if (!activeDialogueSession) return;
+      var t = function (k) { return root.COG.i18n.t(k); };
+      var s = activeDialogueSession;
+      var node = s.data.nodes[s.nodeId];
+      var box = el('dialogue-box');
+      if (!node || !box) {
+        if (box) box.hidden = true;
+        var cb = s.callbacks;
+        activeDialogueSession = null;
+        if (cb && cb.onClose) cb.onClose();
+        return;
+      }
+
+      box.hidden = false;
+      el('dlg-portrait').innerHTML = root.COG.Sprites.getPortraitSvg(s.data.portrait);
+      el('dlg-npc-name').textContent = t('speakers.' + s.data.speaker);
+      el('dlg-npc-text').textContent = t(node.textKey);
+
+      var verseEl = el('dlg-npc-verse');
+      if (node.scriptureId) {
+        verseEl.textContent = t('bible.' + node.scriptureId + '.ref') + ' — “' + t('bible.' + node.scriptureId + '.text') + '”';
         verseEl.hidden = false;
       } else {
         verseEl.hidden = true;
       }
 
-      unlocksEl.innerHTML = '';
-      if (opts.newItemUnlocked) {
-        var pItem = document.createElement('p');
-        pItem.className = 'codex-ref';
-        pItem.textContent = '🎁 ' + t('ui.itemObtained') + ': ' + t('items.' + opts.newItemUnlocked + '.name');
-        unlocksEl.appendChild(pItem);
-      }
-      if (opts.newGuidesUnlocked && opts.newGuidesUnlocked.length) {
-        opts.newGuidesUnlocked.forEach(function (g) {
-          var pg = document.createElement('p');
-          pg.className = 'codex-ref';
-          pg.textContent = g.icon + ' ' + t('ui.guideUnlocked') + ': ' + t('guides.' + g.id + '.name');
-          unlocksEl.appendChild(pg);
+      var choicesEl = el('dlg-choices');
+      choicesEl.innerHTML = '';
+
+      if (node.choices && node.choices.length) {
+        node.choices.forEach(function (ch) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'dlg-choice-btn';
+          btn.textContent = t(ch.textKey);
+          btn.addEventListener('click', function () {
+            root.COG.Audio.play('choice');
+            if (ch.effects && s.callbacks && s.callbacks.onEffect) {
+              s.callbacks.onEffect(ch.effects);
+            }
+            s.nodeId = ch.next;
+            Dialogs.renderDialogueNode();
+          });
+          choicesEl.appendChild(btn);
         });
+      } else {
+        var endBtn = document.createElement('button');
+        endBtn.type = 'button';
+        endBtn.className = 'btn-primary-gold';
+        endBtn.textContent = t('ui.endDialogue');
+        endBtn.addEventListener('click', function () {
+          root.COG.Audio.play('click');
+          if (node.effects && s.callbacks && s.callbacks.onEffect) {
+            s.callbacks.onEffect(node.effects);
+          }
+          box.hidden = true;
+          var cb = s.callbacks;
+          activeDialogueSession = null;
+          if (cb && cb.onClose) cb.onClose();
+        });
+        choicesEl.appendChild(endBtn);
       }
-
-      btnNext.hidden = !opts.hasNext;
-      btnMap.onclick = function () {
-        if (d.open) d.close();
-        if (opts.onMap) opts.onMap();
-      };
-      btnRetry.onclick = function () {
-        if (d.open) d.close();
-        if (opts.onRetry) opts.onRetry();
-      };
-      btnNext.onclick = function () {
-        if (d.open) d.close();
-        if (opts.onNext) opts.onNext();
-      };
-
-      if (d && !d.open) d.showModal();
-    },
-
-    openEnding: function () {
-      var t = function (k) { return root.COG.i18n.t(k); };
-      var state = root.COG.State.get();
-      var totalScore = root.COG.State.getTotalScore();
-      var completed = root.COG.State.getCompletedCount();
-
-      var endingKey = 'pilgrim';
-      var emblem = '🕊️';
-      if (state.edenRoute === 'preserved' && completed >= 12) {
-        endingKey = 'crown';
-        emblem = '👑';
-      } else if (completed >= 6 || state.completedLevels['sinai-4']) {
-        endingKey = 'covenant';
-        emblem = '📜';
-      }
-
-      getEl('ending-emblem').textContent = emblem;
-      getEl('ending-headline').textContent = t('games.sinai.endings.' + endingKey + '.title');
-      getEl('ending-desc').textContent = t('games.sinai.endings.' + endingKey + '.desc');
-      getEl('ending-stats').innerHTML =
-        '<span class="inline-pill">' + t('ui.score') + ': ' + totalScore.toLocaleString() + '</span>' +
-        '<span class="inline-pill">' + t('ui.level') + ': ' + root.COG.State.getPlayerLevel() + '</span>' +
-        '<span class="inline-pill">' + t('ui.faith') + ': ' + state.stats.faith + '</span>' +
-        '<span class="inline-pill">' + t('ui.route') + ': ' + t('ui.route' + state.edenRoute.charAt(0).toUpperCase() + state.edenRoute.slice(1)) + '</span>';
-
-      var d = getEl('dlg-ending');
-      if (d && !d.open) d.showModal();
     }
   };
 
