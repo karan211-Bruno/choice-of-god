@@ -1,0 +1,50 @@
+{
+  "name": "choice-of-god-desktop",
+  "version": "1.0.0",
+  "description": "Choice of God - Genesis & Exodus Multi-Genre Narrative Adventure Desktop Wrapper",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.karan211bruno.choiceofgod",
+    "productName": "Choice of God",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      {
+        "from": "..",
+        "to": "app",
+        "filter": [
+          "index.html",
+          "manifest.webmanifest",
+          "sw.js",
+          "css/**/*",
+          "icons/**/*",
+          "js/**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.games"
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Game"
+    }
+  }
+}

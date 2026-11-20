@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b132b">
+  <title>Choice of God (신의 선택) — 창세기·출애굽기 서사 게임</title>
+  <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./css/styles.css">
+
+  <!-- Classic deferred scripts: 100% compatible with both file:// and HTTPS PWA -->
+  <script defer src="./js/i18n/ko.js"></script>
+  <script defer src="./js/i18n/en.js"></script>
+  <script defer src="./js/i18n/ja.js"></script>
+  <script defer src="./js/i18n/es.js"></script>
+  <script defer src="./js/i18n/zh.js"></script>
+
+  <script defer src="./js/data/bible.js"></script>
+  <script defer src="./js/data/guides.js"></script>
+  <script defer src="./js/data/items.js"></script>
+  <script defer src="./js/data/stages.js"></script>
+
+  <script defer src="./js/engine/i18n.js"></script>
+  <script defer src="./js/engine/state.js"></script>
+  <script defer src="./js/engine/audio.js"></script>
+  <script defer src="./js/engine/runner.js"></script>
+
+  <script defer src="./js/games/eden.js"></script>
+  <script defer src="./js/games/ark.js"></script>
+  <script defer src="./js/games/abraham.js"></script>
+  <script defer src="./js/games/plagues.js"></script>
+  <script defer src="./js/games/redsea.js"></script>
+  <script defer src="./js/games/sinai.js"></script>
+
+  <script defer src="./js/ui/dialogs.js"></script>
+  <script defer src="./js/app.js"></script>
+</head>
+<body>
+  <a href="#main-content" class="skip-link visually-hidden">Skip to main content</a>
+  <div id="live-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-cluster">
+        <svg class="brand-emblem" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="#e6b95c" stroke-width="2" stroke-opacity="0.65"/>
+          <path d="M32 8 L35.5 28 L56 32 L35.5 36 L32 56 L28.5 36 L8 32 L28.5 28 Z" fill="#e6b95c"/>
+          <circle cx="32" cy="32" r="4" fill="#fffbeb"/>
+        </svg>
+        <div class="brand-text">
+          <h1 id="brand-title" data-i18n="appTitle">Choice of God · 신의 선택</h1>
+          <p class="brand-sub" data-i18n="appSubtitle">창세기와 출애굽기 서사 멀티 장르 어드벤처</p>
+        </div>
+      </div>
+
+      <nav class="top-nav" aria-label="Primary Controls">
+        <div class="lang-quick" role="group" aria-label="Language">
+          <label for="lang-select" class="visually-hidden" data-i18n="ui.language">언어 선택</label>
+          <select id="lang-select" class="pill-select">
+            <option value="ko">한국어 (KO)</option>
+            <option value="en">English (EN)</option>
+            <option value="ja">日本語 (JA)</option>
+            <option value="es">Español (ES)</option>
+            <option value="zh">中文 (ZH)</option>
+          </select>
+        </div>
+        <button type="button" id="btn-sound" class="btn-icon" aria-pressed="true" title="Sound">🔊</button>
+        <button type="button" id="btn-open-inventory" class="btn-ghost" data-i18n="ui.inventory">성물 &amp; 천사 가이드</button>
+        <button type="button" id="btn-open-codex" class="btn-ghost" data-i18n="ui.codex">성경 말씀 도감</button>
+        <button type="button" id="btn-open-help" class="btn-ghost" data-i18n="ui.help">게임 방법</button>
+        <button type="button" id="btn-open-settings" class="btn-ghost" data-i18n="ui.settings">설정 및 언어</button>
+      </nav>
+    </div>
+
+    <!-- Global Player Status Bar -->
+    <div class="hud-strip" id="global-hud">
+      <div class="hud-stat"><span class="hud-label" data-i18n="ui.score">점수</span>: <strong id="hud-score">0</strong></div>
+      <div class="hud-stat"><span class="hud-label" data-i18n="ui.level">레벨</span>: <strong id="hud-level">1</strong></div>
+      <div class="hud-stat"><span class="hud-label" data-i18n="ui.faith">믿음</span>: <strong id="hud-faith">10</strong></div>
+      <div class="hud-stat"><span class="hud-label" data-i18n="ui.wisdom">지혜</span>: <strong id="hud-wisdom">10</strong></div>
+      <div class="hud-stat"><span class="hud-label" data-i18n="ui.mercy">긍휼</span>: <strong id="hud-mercy">10</strong></div>
+      <div class="hud-stat hud-route"><span class="hud-label" data-i18n="ui.route">에덴 분기</span>: <strong id="hud-route">미결정</strong></div>
+      <div class="hud-stat hud-guide">
+        <span class="hud-label" data-i18n="ui.activeGuide">동행 가이드</span>:
+        <button type="button" id="hud-guide-btn" class="inline-pill">🔥 그룹 천사</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" tabindex="-1">
+    <!-- View 1: Timeline World Map & Free Viewpoint Selection -->
+    <section id="view-map" class="map-view">
+      <div class="hero-banner">
+        <div class="hero-copy">
+          <h2 id="hero-heading" data-i18n="ui.selectChapter">시점 / 스테이지 자유 선택</h2>
+          <p class="hero-tagline" data-i18n="appTagline"></p>
+          <p class="hero-hint" data-i18n="ui.freeSelectHint"></p>
+        </div>
+        <div class="hero-actions">
+          <button type="button" id="btn-quick-start" class="btn-primary-gold" data-i18n="ui.startGame">여정 시작하기</button>
+          <button type="button" id="btn-view-ending" class="btn-secondary" hidden data-i18n="ui.endingTitle">여정의 결말</button>
+        </div>
+      </div>
+
+      <!-- Viewpoint Filter / Quick Selector -->
+      <div class="chapter-grid" id="chapter-grid" aria-label="Biblical Chapters"></div>
+
+      <!-- Selected Chapter Detail + 4 Sub-Levels Panel -->
+      <section class="chapter-detail-card" id="chapter-detail" aria-labelledby="detail-chapter-title">
+        <div class="detail-header">
+          <div>
+            <span class="badge-period" id="detail-period">창세기 1–3장</span>
+            <h3 id="detail-chapter-title">1장. 에덴동산</h3>
+            <p class="detail-meta">
+              <strong data-i18n="ui.viewpointLabel">시점</strong>: <span id="detail-viewpoint"></span> ·
+              <strong data-i18n="ui.genreLabel">장르</strong>: <span id="detail-genre"></span>
+            </p>
+          </div>
+          <span id="detail-crown-badge" class="crown-badge" data-i18n="ui.highestScoreBadge" hidden></span>
+        </div>
+        <p class="detail-summary" id="detail-summary"></p>
+
+        <div class="sublevels-grid" id="sublevels-grid"></div>
+      </section>
+    </section>
+
+    <!-- View 2: Active Play Stage -->
+    <section id="view-stage" class="stage-view" hidden>
+      <div class="stage-topbar">
+        <button type="button" id="btn-back-map" class="btn-ghost" data-i18n="ui.backToMap">연대기 지도로</button>
+        <div class="stage-title-group">
+          <span class="stage-chapter-pill" id="stage-chapter-name"></span>
+          <h2 id="stage-level-title"></h2>
+        </div>
+        <div class="stage-topbar-actions">
+          <button type="button" id="btn-toggle-touch" class="btn-ghost" data-i18n="ui.touchControls">터치 패드</button>
+          <button type="button" id="btn-stage-retry" class="btn-secondary" data-i18n="ui.retry">다시 도전</button>
+        </div>
+      </div>
+
+      <div class="stage-brief-bar">
+        <p id="stage-objective" class="stage-objective"></p>
+        <p id="stage-status-hud" class="stage-status-hud" aria-live="polite"></p>
+      </div>
+
+      <div class="viewport-frame" id="viewport-frame">
+        <canvas id="game-canvas" width="960" height="540" aria-label="Game Canvas"></canvas>
+        <div id="interactive-overlay" class="interactive-overlay" hidden></div>
+      </div>
+
+      <div class="stage-bottom-bar">
+        <div class="stage-guide-quote" id="stage-guide-quote"></div>
+        <div class="stage-hint-text" id="stage-hint-text"></div>
+      </div>
+
+      <!-- Sacred Item Bar (Real Gameplay Use) -->
+      <div class="item-bar-wrap">
+        <span class="item-bar-title" data-i18n="ui.itemBar">보유 성물 (클릭하여 사용)</span>
+        <div id="stage-item-bar" class="stage-item-bar"></div>
+      </div>
+
+      <!-- Mobile / Touch On-Screen Pad -->
+      <div class="touch-pad" id="touch-pad" hidden>
+        <div class="dpad">
+          <button type="button" class="pad-btn pad-up" data-dir="up" aria-label="Up">▲</button>
+          <div class="dpad-mid">
+            <button type="button" class="pad-btn pad-left" data-dir="left" aria-label="Left">◀</button>
+            <button type="button" class="pad-btn pad-down" data-dir="down" aria-label="Down">▼</button>
+            <button type="button" class="pad-btn pad-right" data-dir="right" aria-label="Right">▶</button>
+          </div>
+        </div>
+        <button type="button" id="touch-action-btn" class="pad-action" data-i18n="ui.actionBtn">말씀 / 행동 (Space)</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Choice of God (신의 선택) · Genesis &amp; Exodus Interactive Narrative · <span data-i18n="ui.controlsHint"></span></p>
+  </footer>
+
+  <!-- Native Accessible Dialogs -->
+  <dialog id="dlg-settings" closedby="any" aria-labelledby="dlg-settings-title">
+    <div class="dlg-header">
+      <h2 id="dlg-settings-title" data-i18n="ui.settings">설정 및 언어</h2>
+      <button type="button" class="dlg-close" data-close-dialog="dlg-settings" autofocus aria-label="Close">✕</button>
+    </div>
+    <div class="dlg-body">
+      <h3 data-i18n="ui.language">언어 선택</h3>
+      <div class="lang-grid" id="dlg-lang-grid">
+        <button type="button" class="lang-card" data-set-lang="ko">한국어<small>Korean</small></button>
+        <button type="button" class="lang-card" data-set-lang="en">English<small>영어</small></button>
+        <button type="button" class="lang-card" data-set-lang="ja">日本語<small>일본어</small></button>
+        <button type="button" class="lang-card" data-set-lang="es">Español<small>스페인어</small></button>
+        <button type="button" class="lang-card" data-set-lang="zh">中文<small>중국어</small></button>
+      </div>
+      <div class="settings-row">
+        <button type="button" id="dlg-sound-toggle" class="btn-secondary"></button>
+        <button type="button" id="dlg-reset-btn" class="btn-danger" data-i18n="ui.resetProgress">진행 기록 초기화</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-codex" closedby="any" aria-labelledby="dlg-codex-title">
+    <div class="dlg-header">
+      <h2 id="dlg-codex-title" data-i18n="ui.codex">성경 말씀 도감</h2>
+      <button type="button" class="dlg-close" data-close-dialog="dlg-codex" autofocus aria-label="Close">✕</button>
+    </div>
+    <div class="dlg-body">
+      <div class="codex-filters" id="codex-filters"></div>
+      <div class="codex-list" id="codex-list"></div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-inventory" closedby="any" aria-labelledby="dlg-inventory-title">
+    <div class="dlg-header">
+      <h2 id="dlg-inventory-title" data-i18n="ui.inventory">성물 &amp; 천사 가이드</h2>
+      <button type="button" class="dlg-close" data-close-dialog="dlg-inventory" autofocus aria-label="Close">✕</button>
+    </div>
+    <div class="dlg-body">
+      <section>
+        <h3 data-i18n="ui.activeGuide">동행 가이드</h3>
+        <div class="cards-list" id="guides-list"></div>
+      </section>
+      <section class="mt-lg">
+        <h3 data-i18n="ui.itemBar">보유 성물</h3>
+        <div class="cards-list" id="items-list"></div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-help" closedby="any" aria-labelledby="dlg-help-title">
+    <div class="dlg-header">
+      <h2 id="dlg-help-title" data-i18n="ui.help">게임 방법</h2>
+      <button type="button" class="dlg-close" data-close-dialog="dlg-help" autofocus aria-label="Close">✕</button>
+    </div>
+    <div class="dlg-body help-body">
+      <p data-i18n="ui.helpBody1"></p>
+      <p data-i18n="ui.helpBody2"></p>
+      <p data-i18n="ui.helpBody3"></p>
+      <p data-i18n="ui.helpBody4"></p>
+      <div class="dlg-actions">
+        <button type="button" class="btn-primary-gold" data-close-dialog="dlg-help" data-i18n="ui.confirm">확인</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-eden-choice" closedby="none" aria-labelledby="dlg-eden-choice-title">
+    <div class="dlg-header">
+      <h2 id="dlg-eden-choice-title" data-i18n="ui.edenChoiceTitle">선악을 알게 하는 나무 앞의 갈림길</h2>
+    </div>
+    <div class="dlg-body">
+      <p data-i18n="ui.edenChoiceBody"></p>
+      <blockquote class="scripture-quote" id="eden-choice-verse"></blockquote>
+      <div class="choice-stack">
+        <button type="button" id="btn-eden-resist" class="btn-primary-gold" autofocus data-i18n="ui.edenChoiceResist"></button>
+        <button type="button" id="btn-eden-eat" class="btn-danger" data-i18n="ui.edenChoiceEat"></button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-result" closedby="none" aria-labelledby="dlg-result-title">
+    <div class="dlg-header">
+      <h2 id="dlg-result-title">Result</h2>
+    </div>
+    <div class="dlg-body">
+      <p class="result-stars" id="dlg-result-stars"></p>
+      <p class="result-summary" id="dlg-result-summary"></p>
+      <blockquote class="scripture-quote" id="dlg-result-verse"></blockquote>
+      <div id="dlg-result-unlocks" class="unlocks-box"></div>
+      <div class="dlg-actions">
+        <button type="button" id="btn-result-map" class="btn-ghost" data-i18n="ui.backToMap"></button>
+        <button type="button" id="btn-result-retry" class="btn-secondary" data-i18n="ui.retry"></button>
+        <button type="button" id="btn-result-next" class="btn-primary-gold" autofocus data-i18n="ui.nextLevel"></button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-ending" closedby="any" aria-labelledby="dlg-ending-title">
+    <div class="dlg-header">
+      <h2 id="dlg-ending-title" data-i18n="ui.endingTitle">여정의 결말</h2>
+      <button type="button" class="dlg-close" data-close-dialog="dlg-ending" autofocus aria-label="Close">✕</button>
+    </div>
+    <div class="dlg-body ending-body">
+      <div class="ending-crown" id="ending-emblem">👑</div>
+      <h3 id="ending-headline"></h3>
+      <p id="ending-desc"></p>
+      <div class="ending-stats" id="ending-stats"></div>
+      <div class="dlg-actions">
+        <button type="button" class="btn-primary-gold" data-close-dialog="dlg-ending" data-i18n="ui.endingClose">연대기 지도로 돌아가기</button>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>

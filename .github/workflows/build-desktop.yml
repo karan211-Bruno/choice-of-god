@@ -1,0 +1,48 @@
+name: Build Desktop Installers (macOS, Windows, Linux)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            cmd: npm run dist:mac
+          - os: windows-latest
+            cmd: npm run dist:win
+          - os: ubuntu-latest
+            cmd: npm run dist:linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install desktop wrapper dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Build installer
+        working-directory: desktop
+        run: ${{ matrix.cmd }}
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: choice-of-god-${{ matrix.os }}
+          path: |
+            desktop/dist/*.dmg
+            desktop/dist/*.exe
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+          if-no-files-found: warn
