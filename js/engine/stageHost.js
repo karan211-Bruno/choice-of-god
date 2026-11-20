@@ -8,10 +8,14 @@
   var rafId = null;
   var activeCleanups = [];
   var activeTimers = [];
+  var keyDownListeners = [];
   var activeUpdateFn = null;
   var activeRenderFn = null;
   var paused = false;
   var lastTs = 0;
+  var shakeAmp = 0;
+  var shakeTimer = 0;
+  var hitstopTimer = 0;
 
   var keys = { left: false, right: false, up: false, down: false, action: false, actionJustPressed: false, dashJustPressed: false };
   var canvasEl = null;
@@ -36,8 +40,12 @@
       try { activeCleanups[j](); } catch (_) {}
     }
     activeCleanups = [];
+    keyDownListeners = [];
     activeUpdateFn = null;
     activeRenderFn = null;
+    shakeAmp = 0;
+    shakeTimer = 0;
+    hitstopTimer = 0;
     keys.left = false; keys.right = false; keys.up = false; keys.down = false;
     keys.action = false; keys.actionJustPressed = false; keys.dashJustPressed = false;
     if (overlayEl) { overlayEl.innerHTML = ''; overlayEl.hidden = true; }
@@ -58,6 +66,10 @@
       if (!keys.action) keys.actionJustPressed = true;
       keys.action = true;
       e.preventDefault();
+    }
+
+    for (var i = 0; i < keyDownListeners.length; i++) {
+      try { keyDownListeners[i](k, e); } catch (_) {}
     }
   }
 
@@ -82,12 +94,22 @@
     lastTs = ts;
 
     if (!paused) {
-      if (activeUpdateFn) activeUpdateFn(dt, keys);
-      keys.actionJustPressed = false;
-      keys.dashJustPressed = false;
+      if (shakeTimer > 0) shakeTimer = Math.max(0, shakeTimer - dt);
+      if (hitstopTimer > 0) {
+        hitstopTimer = Math.max(0, hitstopTimer - dt);
+      } else {
+        if (activeUpdateFn) activeUpdateFn(dt, keys);
+        keys.actionJustPressed = false;
+        keys.dashJustPressed = false;
+      }
     }
     if (activeRenderFn && ctx) {
       ctx.save();
+      if (!paused && shakeTimer > 0 && shakeAmp > 0) {
+        var ox = (Math.random() - 0.5) * 2 * shakeAmp;
+        var oy = (Math.random() - 0.5) * 2 * shakeAmp;
+        ctx.translate(ox, oy);
+      }
       activeRenderFn(ctx);
       ctx.restore();
     }
@@ -136,6 +158,16 @@
         t: function (k, v) { return root.COG.i18n.t(k, v); },
         pack: function () { return root.COG.i18n.pack(); },
         sfx: function (kind) { root.COG.Audio.play(kind); },
+        shake: function (amp, dur) {
+          shakeAmp = Math.max(shakeAmp, amp || 6);
+          shakeTimer = Math.max(shakeTimer, dur || 0.22);
+        },
+        hitstop: function (dur) {
+          hitstopTimer = Math.max(hitstopTimer, dur || 0.06);
+        },
+        onKeyDown: function (fn) {
+          if (typeof fn === 'function') keyDownListeners.push(fn);
+        },
         consumeAction: function () {
           if (keys.actionJustPressed) { keys.actionJustPressed = false; return true; }
           return false;

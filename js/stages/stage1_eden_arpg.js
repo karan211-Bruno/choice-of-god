@@ -8,32 +8,24 @@
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  function drawStrokeText(ctx, text, x, y, fill, font) {
-    ctx.save();
-    ctx.font = font || '900 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#291709';
-    ctx.strokeText(text, x, y);
-    ctx.fillStyle = fill || '#fde047';
-    ctx.fillText(text, x, y);
-    ctx.restore();
-  }
-
   root.COG.STAGES.eden = {
     start: function (host, stageObj) {
       var W = host.WIDTH, H = host.HEIGHT;
       var S = root.COG.ChibiSprites;
       var Sp = root.COG.Sprites;
+      var vfx = root.COG.VFX.createManager();
       var uiT = function () { return host.pack().stageUi.eden; };
       var bonus = root.COG.State.getPowerBonus();
 
       var hero = {
-        x: 480, y: 390, r: 20, speed: 255, hp: 7 + Math.floor(bonus.hp / 25), maxHp: 7 + Math.floor(bonus.hp / 25),
-        facingAngle: -Math.PI / 2, moving: false, attackTimer: 0, attackCd: 0, dashTimer: 0, dashCd: 0, dashVx: 0, dashVy: 0, invuln: 0
+        x: 480, y: 390, r: 20, speed: 260,
+        hp: 7 + Math.floor(bonus.hp / 25), maxHp: 7 + Math.floor(bonus.hp / 25),
+        facingAngle: -Math.PI / 2, moving: false,
+        attackTimer: 0, attackCd: 0, comboIdx: 0, comboReset: 0, comboHits: 0,
+        dashTimer: 0, dashCd: 0, dashVx: 0, dashVy: 0, invuln: 0, dustCd: 0, ghostCd: 0
       };
-      var angelPos = { x: 432, y: 356 };
+      var angel = { x: 430, y: 356, atkTimer: 0, autoCd: 2.0, burstCd: 0 };
+      var spinCd = 0;
       var time = 0;
       var talkedCherubim = false;
       var crossroadsDone = false;
@@ -46,10 +38,14 @@
         { x: 480, y: 115, got: false }
       ];
       var enemies = [
-        { x: 240, y: 190, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0, hitFlash: 0 },
-        { x: 710, y: 200, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0, hitFlash: 0 },
-        { x: 255, y: 355, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0, hitFlash: 0 },
-        { x: 175, y: 270, hp: 155, maxHp: 155, spd: 68, isBoss: true, cd: 0, hitFlash: 0 }
+        { x: 240, y: 190, hp: 38, maxHp: 38, spd: 58, isBoss: false, cd: 0, hitFlash: 0, moving: true, atkTimer: 0 },
+        { x: 710, y: 200, hp: 38, maxHp: 38, spd: 58, isBoss: false, cd: 0, hitFlash: 0, moving: true, atkTimer: 0 },
+        { x: 255, y: 355, hp: 38, maxHp: 38, spd: 58, isBoss: false, cd: 0, hitFlash: 0, moving: true, atkTimer: 0 },
+        {
+          x: 175, y: 270, hp: 185, maxHp: 185, spd: 68, isBoss: true,
+          cd: 0, hitFlash: 0, moving: true, atkTimer: 0,
+          aiCd: 2.6, mode: 'stalk', windup: 0, dashTimer: 0, dashAng: 0, patternIdx: 0
+        }
       ];
       var flowers = [];
       for (var f = 0; f < 16; f++) {
@@ -64,61 +60,163 @@
         { x: 600, y: 320, col: '#fde047' },
         { x: 460, y: 160, col: '#60a5fa' }
       ];
-      var sparkles = [];
-      var burstParticles = [];
+      var heroWaves = [];
+      var bossOrbs = [];
 
       var treeLife = { x: 480, y: 260 };
       var treeForb = { x: 115, y: 270 };
       var npcCherubim = { x: 825, y: 270 };
 
-      function spawnBurst(x, y, col, count) {
-        for (var i = 0; i < (count || 8); i++) {
-          var a = (i / (count || 8)) * Math.PI * 2 + Math.random() * 0.4;
-          var sp = 60 + Math.random() * 90;
-          burstParticles.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, col: col, life: 0.42, maxLife: 0.42 });
+      function renderToolbar() {
+        var t = uiT();
+        var s1Dis = spinCd > 0 ? ' disabled' : '';
+        var s2Dis = angel.burstCd > 0 ? ' disabled' : '';
+        var s1Txt = t.skills.spin + (spinCd > 0 ? ' (' + spinCd.toFixed(1) + 's)' : '');
+        var s2Txt = t.skills.angelBurst + (angel.burstCd > 0 ? ' (' + angel.burstCd.toFixed(1) + 's)' : '');
+        var tb = host.setToolbar('<div class="sim-toolbar">' +
+          '<button type="button" class="btn-primary-gold" data-sk="spin"' + s1Dis + '>' + s1Txt + '</button>' +
+          '<button type="button" class="btn-secondary" data-sk="angel"' + s2Dis + '>' + s2Txt + '</button>' +
+          '</div>');
+        if (!tb) return;
+        var btns = tb.querySelectorAll('[data-sk]');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].addEventListener('click', function () {
+            var k = this.getAttribute('data-sk');
+            if (k === 'spin') triggerSpinSkill();
+            else triggerAngelBurst();
+          });
         }
+      }
+
+      function damageEnemy(en, dmg, knock, isCrit) {
+        en.hp -= dmg;
+        en.hitFlash = 0.16;
+        var a = Math.atan2(en.y - hero.y, en.x - hero.x);
+        en.x = Math.max(46, Math.min(W - 46, en.x + Math.cos(a) * knock));
+        en.y = Math.max(46, Math.min(H - 46, en.y + Math.sin(a) * knock));
+        hero.comboHits++;
+        hero.comboReset = 2.6;
+        vfx.spawnBurst(en.x, en.y - 12, isCrit ? '#fb7185' : '#fef08a', isCrit ? 14 : 8, isCrit ? 160 : 110);
+        vfx.addPopup(en.x, en.y - 26, (isCrit ? 'CRIT! -' : '-') + dmg, isCrit ? '#fb7185' : '#fde047', isCrit ? 1.25 : 1.0);
+
+        if (en.isBoss && en.hp > 0 && en.hp <= en.maxHp * 0.5 && !crossroadsDone) {
+          triggerCrossroads();
+          return 'dialogue';
+        }
+        if (en.hp <= 0) {
+          var wasBoss = en.isBoss;
+          vfx.spawnBurst(en.x, en.y - 16, '#c084fc', 16, 150);
+          vfx.spawnRing(en.x, en.y - 10, '#c084fc', 75, 0.45);
+          var idx = enemies.indexOf(en);
+          if (idx !== -1) enemies.splice(idx, 1);
+          host.sfx('chime');
+          if (wasBoss) {
+            root.COG.State.setEdenRoute('preserved');
+            host.sfx('win');
+            host.win(stageObj.baseScore + hero.hp * 80 + hero.comboHits * 15, 3, {
+              faith: 10, wisdom: 6,
+              customSummary: host.t('stages.eden.outroPreserved')
+            });
+            return 'win';
+          }
+        }
+        return 'ok';
       }
 
       function slashAttack() {
         if (hero.attackCd > 0) return;
-        hero.attackTimer = 0.22;
-        hero.attackCd = 0.28;
+        hero.comboIdx = (hero.comboIdx % 3) + 1;
+        hero.comboReset = 1.1;
+        hero.attackTimer = 0.24;
+        hero.attackCd = hero.comboIdx === 3 ? 0.34 : 0.24;
         host.sfx('slash');
-        var dmg = 20 + bonus.atk;
+
+        var isFinisher = hero.comboIdx === 3;
+        var dmg = (isFinisher ? 30 : 20) + bonus.atk;
+        var reach = isFinisher ? 96 : 82;
+
+        if (isFinisher) {
+          heroWaves.push({
+            x: hero.x + Math.cos(hero.facingAngle) * 24,
+            y: hero.y - 12 + Math.sin(hero.facingAngle) * 24,
+            vx: Math.cos(hero.facingAngle) * 440,
+            vy: Math.sin(hero.facingAngle) * 440,
+            ang: hero.facingAngle,
+            life: 0.48,
+            dmg: Math.round((24 + bonus.atk) * 0.9)
+          });
+          vfx.spawnRing(hero.x, hero.y - 10, '#facc15', 75, 0.32);
+        }
+
+        // Deflect any incoming Temptation Orbs cleanly!
+        for (var oi = bossOrbs.length - 1; oi >= 0; oi--) {
+          var orb = bossOrbs[oi];
+          if (!orb.reflected && dist(hero.x, hero.y, orb.x, orb.y) < 76) {
+            orb.reflected = true;
+            orb.vx = Math.cos(hero.facingAngle) * 420;
+            orb.vy = Math.sin(hero.facingAngle) * 420;
+            orb.life = 1.0;
+            vfx.spawnBurst(orb.x, orb.y, '#fde047', 8);
+            vfx.addPopup(orb.x, orb.y - 16, 'DEFLECT!', '#7dd3fc', 1.05);
+            host.sfx('chime');
+          }
+        }
+
         for (var i = enemies.length - 1; i >= 0; i--) {
           var en = enemies[i];
-          var d = dist(hero.x, hero.y, en.x, en.y);
-          if (d <= 82) {
-            en.hp -= dmg;
-            en.hitFlash = 0.14;
-            var a = Math.atan2(en.y - hero.y, en.x - hero.x);
-            en.x = Math.max(50, Math.min(W - 50, en.x + Math.cos(a) * 26));
-            en.y = Math.max(50, Math.min(H - 50, en.y + Math.sin(a) * 26));
-            sparkles.push({ x: en.x, y: en.y - 24, life: 0.45, text: '-' + dmg, col: '#fde047' });
-            spawnBurst(en.x, en.y - 14, '#fef08a', 7);
-
-            if (en.isBoss && en.hp > 0 && en.hp <= en.maxHp * 0.5 && !crossroadsDone) {
-              triggerCrossroads();
-              return;
-            }
-            if (en.hp <= 0) {
-              var wasBoss = en.isBoss;
-              spawnBurst(en.x, en.y - 16, '#c084fc', 14);
-              enemies.splice(i, 1);
-              host.sfx('chime');
-              if (wasBoss) {
-                root.COG.State.setEdenRoute('preserved');
-                host.sfx('win');
-                host.win(stageObj.baseScore + hero.hp * 80, 3, {
-                  faith: 10, wisdom: 6,
-                  customSummary: host.t('stages.eden.outroPreserved')
-                });
-                return;
-              }
-            }
+          if (dist(hero.x, hero.y, en.x, en.y) <= reach) {
+            if (isFinisher) { host.shake(6, 0.16); host.hitstop(0.05); }
+            else host.shake(3, 0.08);
+            var res = damageEnemy(en, dmg, isFinisher ? 36 : 22, isFinisher);
+            if (res !== 'ok') return;
           }
         }
       }
+
+      function triggerSpinSkill() {
+        if (spinCd > 0) return;
+        spinCd = 4.5;
+        hero.attackTimer = 0.35;
+        hero.comboIdx = 3;
+        hero.invuln = Math.max(hero.invuln, 0.45);
+        host.sfx('magic');
+        host.shake(8, 0.24);
+        host.hitstop(0.06);
+        vfx.spawnRing(hero.x, hero.y - 10, '#fde047', 120, 0.42);
+        vfx.spawnBurst(hero.x, hero.y - 12, '#fde047', 16, 180);
+        for (var i = enemies.length - 1; i >= 0; i--) {
+          var en = enemies[i];
+          if (dist(hero.x, hero.y, en.x, en.y) <= 125) {
+            if (damageEnemy(en, 34 + bonus.atk, 44, true) !== 'ok') return;
+          }
+        }
+        renderToolbar();
+      }
+
+      function triggerAngelBurst() {
+        if (angel.burstCd > 0) return;
+        angel.burstCd = 8.0;
+        angel.atkTimer = 0.55;
+        hero.hp = Math.min(hero.maxHp, hero.hp + 1);
+        host.sfx('chime');
+        vfx.spawnRing(angel.x, angel.y, '#7dd3fc', 85, 0.45);
+        vfx.addPopup(hero.x, hero.y - 34, '+1 ♥ HEAL!', '#4ade80', 1.1);
+        var targets = enemies.slice(0, 3);
+        targets.forEach(function (target) {
+          vfx.spawnOrb(angel.x, angel.y - 14, target.x, target.y - 10, '#7dd3fc', 0.42, function () {
+            if (enemies.indexOf(target) !== -1) {
+              damageEnemy(target, 28 + Math.round(bonus.atk * 0.8), 18, true);
+              host.shake(4, 0.12);
+            }
+          });
+        });
+        renderToolbar();
+      }
+
+      host.onKeyDown(function (key) {
+        if (key === 'q' || key === 'Q' || key === '1') triggerSpinSkill();
+        else if (key === 'r' || key === 'R' || key === '2') triggerAngelBurst();
+      });
 
       function triggerCrossroads() {
         crossroadsDone = true;
@@ -168,19 +266,33 @@
         slashAttack();
       });
 
+      renderToolbar();
+
       host.onUpdate(function (dt, keys) {
         time += dt;
+        var prevSpinReady = spinCd <= 0;
+        var prevAngelReady = angel.burstCd <= 0;
+        if (spinCd > 0) spinCd = Math.max(0, spinCd - dt);
+        if (angel.burstCd > 0) angel.burstCd = Math.max(0, angel.burstCd - dt);
+        if (Math.floor((spinCd + dt) * 2) !== Math.floor(spinCd * 2) || (!prevSpinReady && spinCd <= 0) || (!prevAngelReady && angel.burstCd <= 0)) {
+          renderToolbar();
+        }
+
         if (hero.attackTimer > 0) hero.attackTimer = Math.max(0, hero.attackTimer - dt);
         if (hero.attackCd > 0) hero.attackCd = Math.max(0, hero.attackCd - dt);
         if (hero.dashCd > 0) hero.dashCd = Math.max(0, hero.dashCd - dt);
         if (hero.invuln > 0) hero.invuln = Math.max(0, hero.invuln - dt);
+        if (hero.comboReset > 0) {
+          hero.comboReset -= dt;
+          if (hero.comboReset <= 0) { hero.comboIdx = 0; hero.comboHits = 0; }
+        }
 
         if (host.consumeDash() && hero.dashCd <= 0) {
-          hero.dashTimer = 0.2; hero.dashCd = 0.85; hero.invuln = 0.35;
-          hero.dashVx = Math.cos(hero.facingAngle) * 520;
-          hero.dashVy = Math.sin(hero.facingAngle) * 520;
+          hero.dashTimer = 0.22; hero.dashCd = 0.85; hero.invuln = 0.38;
+          hero.dashVx = Math.cos(hero.facingAngle) * 540;
+          hero.dashVy = Math.sin(hero.facingAngle) * 540;
           host.sfx('dash');
-          spawnBurst(hero.x, hero.y, '#bae6fd', 6);
+          vfx.spawnBurst(hero.x, hero.y, '#bae6fd', 8, 90);
         }
 
         if (hero.dashTimer > 0) {
@@ -188,6 +300,13 @@
           hero.x += hero.dashVx * dt;
           hero.y += hero.dashVy * dt;
           hero.moving = true;
+          hero.ghostCd -= dt;
+          if (hero.ghostCd <= 0) {
+            hero.ghostCd = 0.05;
+            vfx.addAfterimage('hero_adam_sheet', 1, hero.x, hero.y + 18, {
+              height: 92, flipX: Math.cos(hero.facingAngle) < -0.15, duration: 0.24
+            });
+          }
         } else {
           var dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
           var dy = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
@@ -197,6 +316,11 @@
             hero.y += (dy / l) * hero.speed * dt;
             hero.facingAngle = Math.atan2(dy, dx);
             hero.moving = true;
+            hero.dustCd -= dt;
+            if (hero.dustCd <= 0) {
+              hero.dustCd = 0.16;
+              vfx.spawnDust(hero.x, hero.y + 16, 2);
+            }
           } else {
             hero.moving = false;
           }
@@ -204,11 +328,68 @@
         hero.x = Math.max(40, Math.min(W - 40, hero.x));
         hero.y = Math.max(45, Math.min(H - 40, hero.y));
 
-        angelPos.x += (hero.x - 46 - angelPos.x) * Math.min(1, dt * 5);
-        angelPos.y += (hero.y - 36 - angelPos.y) * Math.min(1, dt * 5);
+        // Autonomous Cherubim helper
+        angel.x += (hero.x - 48 - angel.x) * Math.min(1, dt * 5);
+        angel.y += (hero.y - 36 - angel.y) * Math.min(1, dt * 5);
+        if (angel.atkTimer > 0) angel.atkTimer = Math.max(0, angel.atkTimer - dt);
+        angel.autoCd -= dt;
+        if (angel.autoCd <= 0 && enemies.length > 0) {
+          var nearest = null, bestD = 290;
+          enemies.forEach(function (en) {
+            var dd = dist(angel.x, angel.y, en.x, en.y);
+            if (dd < bestD) { bestD = dd; nearest = en; }
+          });
+          if (nearest) {
+            angel.autoCd = 2.2;
+            angel.atkTimer = 0.35;
+            vfx.spawnOrb(angel.x, angel.y - 10, nearest.x, nearest.y - 10, '#fde047', 0.36, function () {
+              if (enemies.indexOf(nearest) !== -1) damageEnemy(nearest, 10, 10, false);
+            });
+          } else {
+            angel.autoCd = 0.6;
+          }
+        }
 
         if (host.consumeAction()) {
           if (!tryInteract()) slashAttack();
+        }
+
+        // Crescent wave projectiles
+        for (var wi = heroWaves.length - 1; wi >= 0; wi--) {
+          var wv = heroWaves[wi];
+          wv.x += wv.vx * dt; wv.y += wv.vy * dt; wv.life -= dt;
+          vfx.spawnDust(wv.x, wv.y, 1);
+          for (var ei = enemies.length - 1; ei >= 0; ei--) {
+            var tgt = enemies[ei];
+            if (dist(wv.x, wv.y, tgt.x, tgt.y) < 38) {
+              damageEnemy(tgt, wv.dmg, 24, true);
+              wv.life = 0;
+              break;
+            }
+          }
+          if (wv.life <= 0) heroWaves.splice(wi, 1);
+        }
+
+        // Boss Temptation Orbs
+        for (var bi = bossOrbs.length - 1; bi >= 0; bi--) {
+          var o = bossOrbs[bi];
+          o.x += o.vx * dt; o.y += o.vy * dt; o.life -= dt;
+          if (o.reflected) {
+            for (var ej = enemies.length - 1; ej >= 0; ej--) {
+              if (dist(o.x, o.y, enemies[ej].x, enemies[ej].y) < 34) {
+                damageEnemy(enemies[ej], 26, 20, true);
+                o.life = 0;
+                break;
+              }
+            }
+          } else if (dist(o.x, o.y, hero.x, hero.y) < 26 && hero.invuln <= 0) {
+            hero.hp--; hero.invuln = 1.4;
+            host.sfx('hit'); host.shake(5, 0.16);
+            vfx.addPopup(hero.x, hero.y - 30, '-1 ♥', '#fb7185', 1.1);
+            o.life = 0;
+            if (hero.hp <= 0) { host.sfx('fail'); host.fail(); return; }
+          }
+          if (o.life <= 0) bossOrbs.splice(bi, 1);
         }
 
         var gotStars = 0;
@@ -216,8 +397,8 @@
           if (!st.got && dist(hero.x, hero.y, st.x, st.y) < 36) {
             st.got = true;
             host.sfx('chime');
-            sparkles.push({ x: st.x, y: st.y - 10, life: 0.5, text: '+100', col: '#fde047' });
-            spawnBurst(st.x, st.y, '#fde047', 10);
+            vfx.addPopup(st.x, st.y - 12, '+100 ★', '#fde047', 1.15);
+            vfx.spawnBurst(st.x, st.y, '#fde047', 12, 120);
             root.COG.State.addStat({ score: 100, faith: 1 });
           }
           if (st.got) gotStars++;
@@ -225,20 +406,77 @@
 
         var boss = null;
         enemies.forEach(function (en) {
-          if (en.isBoss) boss = en;
           if (en.cd > 0) en.cd -= dt;
           if (en.hitFlash > 0) en.hitFlash = Math.max(0, en.hitFlash - dt);
+          if (en.atkTimer > 0) en.atkTimer = Math.max(0, en.atkTimer - dt);
           var d = dist(hero.x, hero.y, en.x, en.y);
-          if (d < 245 && d > 26) {
-            var a = Math.atan2(hero.y - en.y, hero.x - en.x);
-            en.x += Math.cos(a) * en.spd * dt;
-            en.y += Math.sin(a) * en.spd * dt;
+
+          if (en.isBoss) {
+            boss = en;
+            if (en.mode === 'windup') {
+              en.windup -= dt;
+              en.moving = false;
+              if (en.windup <= 0) {
+                en.mode = 'dash';
+                en.dashTimer = 0.42;
+                en.atkTimer = 0.42;
+                host.sfx('dash');
+              }
+            } else if (en.mode === 'dash') {
+              en.dashTimer -= dt;
+              en.x = Math.max(50, Math.min(W - 50, en.x + Math.cos(en.dashAng) * 340 * dt));
+              en.y = Math.max(50, Math.min(H - 50, en.y + Math.sin(en.dashAng) * 340 * dt));
+              vfx.addAfterimage('boss_serpent_sheet', 3, en.x, en.y + 16, {
+                height: 118, flipX: hero.x > en.x, duration: 0.18
+              });
+              if (en.dashTimer <= 0) en.mode = 'stalk';
+            } else {
+              en.aiCd -= dt;
+              if (d < 340 && en.aiCd <= 0) {
+                en.aiCd = 3.2;
+                en.patternIdx = (en.patternIdx + 1) % 2;
+                if (en.patternIdx === 0) {
+                  en.mode = 'windup';
+                  en.windup = 0.72;
+                  en.dashAng = Math.atan2(hero.y - en.y, hero.x - en.x);
+                } else {
+                  en.atkTimer = 0.4;
+                  var baseA = Math.atan2(hero.y - en.y, hero.x - en.x);
+                  [-0.28, 0, 0.28].forEach(function (off) {
+                    bossOrbs.push({
+                      x: en.x, y: en.y - 10,
+                      vx: Math.cos(baseA + off) * 210, vy: Math.sin(baseA + off) * 210,
+                      life: 2.3, reflected: false
+                    });
+                  });
+                }
+              } else if (d < 280 && d > 28) {
+                var ba = Math.atan2(hero.y - en.y, hero.x - en.x);
+                en.x += Math.cos(ba) * en.spd * dt;
+                en.y += Math.sin(ba) * en.spd * dt;
+                en.moving = true;
+              } else {
+                en.moving = false;
+              }
+            }
+          } else {
+            if (d < 255 && d > 26) {
+              var a = Math.atan2(hero.y - en.y, hero.x - en.x);
+              en.x += Math.cos(a) * en.spd * dt;
+              en.y += Math.sin(a) * en.spd * dt;
+              en.moving = true;
+            } else {
+              en.moving = false;
+            }
           }
-          if (d < 32 && hero.invuln <= 0) {
+
+          if (d < 34 && hero.invuln <= 0) {
             hero.hp--;
             hero.invuln = 1.5;
+            en.atkTimer = 0.35;
             host.sfx('hit');
-            sparkles.push({ x: hero.x, y: hero.y - 30, life: 0.45, text: '-1 ♥', col: '#fb7185' });
+            host.shake(5, 0.16);
+            vfx.addPopup(hero.x, hero.y - 30, '-1 ♥', '#fb7185', 1.1);
             if (hero.hp <= 0) {
               host.sfx('fail');
               host.fail();
@@ -247,19 +485,11 @@
           }
         });
 
-        for (var si = sparkles.length - 1; si >= 0; si--) {
-          sparkles[si].y -= 32 * dt;
-          sparkles[si].life -= dt;
-          if (sparkles[si].life <= 0) sparkles.splice(si, 1);
-        }
-        for (var bi = burstParticles.length - 1; bi >= 0; bi--) {
-          var p = burstParticles[bi];
-          p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
-          if (p.life <= 0) burstParticles.splice(bi, 1);
-        }
+        vfx.update(dt);
 
         var t = uiT();
         host.setHud(t.stars + ': ' + gotStars + '/5 · ' + t.hearts + ': ' + hero.hp + '/' + hero.maxHp +
+          (hero.comboHits >= 2 ? ' · ' + t.combo + ': x' + hero.comboHits : '') +
           (boss ? ' · ' + t.bossHp + ': ' + Math.max(0, boss.hp) : ''));
       });
 
@@ -272,17 +502,32 @@
           ctx.fillRect(0, 0, W, H);
         }
 
-        // Subtle sunlit Eden motes & wildflowers
         flowers.forEach(function (fl) { S.drawFlower(ctx, fl.x, fl.y, fl.col, time); });
         butterflies.forEach(function (bf, idx) {
           S.drawButterfly(ctx, bf.x + Math.sin(time + idx) * 28, bf.y + Math.cos(time * 1.4 + idx) * 18, bf.col, time);
         });
 
+        // Boss dash telegraph danger indicator
+        enemies.forEach(function (en) {
+          if (en.isBoss && en.mode === 'windup') {
+            ctx.save();
+            ctx.translate(en.x, en.y);
+            ctx.rotate(en.dashAng);
+            ctx.fillStyle = 'rgba(244, 63, 94, ' + (0.22 + Math.abs(Math.sin(time * 18)) * 0.25) + ')';
+            ctx.strokeStyle = '#fb7185';
+            ctx.lineWidth = 2;
+            ctx.fillRect(0, -20, 190, 40);
+            ctx.strokeRect(0, -20, 190, 40);
+            ctx.restore();
+          }
+        });
+
+        vfx.renderBack(ctx);
+
         stars.forEach(function (st) {
           if (!st.got) S.drawStarGem(ctx, st.x, st.y, '#facc15', time);
         });
 
-        // Y-sorted isometric entities (trees, NPC, enemies, hero)
         var drawQueue = [];
         drawQueue.push({
           y: treeLife.y + 34,
@@ -316,6 +561,8 @@
             fn: function () {
               S.drawCuteSerpent(ctx, en.x, en.y + 16, time, en.isBoss ? 1.05 : 0.92, en.isBoss, {
                 flipX: hero.x > en.x,
+                moving: en.moving,
+                attackTimer: en.atkTimer,
                 hitFlash: en.hitFlash > 0
               });
               if (en.hp < en.maxHp) {
@@ -336,29 +583,49 @@
               facingAngle: hero.facingAngle,
               moving: hero.moving,
               attackTimer: hero.attackTimer,
+              comboIdx: hero.comboIdx,
               invuln: hero.invuln,
               height: 92,
               lv: root.COG.State.getPlayerLevel()
             }, time);
-            S.drawCuteAngel(ctx, angelPos.x, angelPos.y + 6, '#38bdf8', time, 0.72);
+            S.drawCuteAngel(ctx, angel.x, angel.y + 6, '#38bdf8', time, 0.72, {
+              attackTimer: angel.atkTimer,
+              flipX: Math.cos(hero.facingAngle) < -0.15
+            });
           }
         });
 
         drawQueue.sort(function (a, b) { return a.y - b.y; });
         for (var q = 0; q < drawQueue.length; q++) drawQueue[q].fn();
 
-        // Sparkle & burst particles
-        burstParticles.forEach(function (p) {
+        // Hero Crescent Finisher Waves
+        heroWaves.forEach(function (wv) {
           ctx.save();
-          ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-          ctx.fillStyle = p.col;
-          ctx.beginPath(); ctx.arc(p.x, p.y, 4.2, 0, Math.PI * 2); ctx.fill();
+          ctx.translate(wv.x, wv.y);
+          ctx.rotate(wv.ang);
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 8;
+          ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.arc(0, 0, 26, -1.0, 1.0); ctx.stroke();
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(2, 0, 24, -0.8, 0.8); ctx.stroke();
           ctx.restore();
         });
 
-        sparkles.forEach(function (sp) {
-          drawStrokeText(ctx, sp.text, sp.x, sp.y, sp.col || '#fde047', '900 16px sans-serif');
+        // Boss Temptation Orbs
+        bossOrbs.forEach(function (o) {
+          ctx.save();
+          ctx.fillStyle = o.reflected ? '#7dd3fc' : '#a855f7';
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.restore();
         });
+
+        vfx.renderFront(ctx);
+
+        if (hero.comboHits >= 2 && Sp && Sp.drawLevelBadge) {
+          Sp.drawLevelBadge(ctx, W - 92, 34, hero.comboHits + ' HIT!', '#fde047');
+        }
       });
     }
   };

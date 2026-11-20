@@ -123,22 +123,26 @@
     },
     stageUi: {
       eden: {
-        stars: '创造之星', bossHp: '小魔王顽皮蛇', hearts: '爱心',
-        hint: 'WASD/方向键移动 · 空格/点击挥光剑 · Shift翻滚 · E与小天使/苹果树对话'
+        stars: '创造之星', bossHp: '小魔王顽皮蛇', hearts: '爱心', combo: '连击',
+        skills: { spin: '🌀 光剑旋风斩 (Q)', angelBurst: '✨ 天使光束+治疗 (R)' },
+        hint: 'WASD/方向键移动 · 空格/点击3段连击 · Shift翻滚 · Q/R技能 · E对话'
       },
       ark: {
         timber: '歌斐木', pitch: '松香', animals: '登舟小动物', arkProg: '方舟进度',
+        driftwood: '🪵 漂流木材 (+4)', rainBoost: '🌧️ 祝福春雨！松香翻倍！',
         tools: { mill: '🪵 伐木工坊 (免费)', well: '🏺 松香井 (木3)', pen: '🐑 萌宠小屋 (木4)', buildArk: '🚢 建造方舟 (+25% · 木6, 香4)' },
-        harvestTip: '点击空草地建造设施，再次点击已建成的工坊还能立刻收获更多材料！'
+        harvestTip: '点击草地格子，挪亚就会跑过去挥锤建造并升级到Lv.3！'
       },
       abraham: {
         turn: '回合', faith: '信心', food: '粮草', shrines: '星光圣坛',
-        hint: '点击周围高亮的六角格，带领亚伯拉罕一步步走向摩利亚山（右上角）！'
+        skills: { starBolt: '⭐ 星光闪电 (信心 8)', peace: '🕊️ 和平使者 (粮草 6)' },
+        hint: '步步走向高亮六角格或施放祝福技能，前往摩利亚山！'
       },
       plagues: {
         mosesParty: '摩西 & 亚伦', enemyParty: '法老 & 术士',
         turnPlayer: '摩西回合 — 请选择神迹技能！',
         turnEnemy: '法老正在准备反击...',
+        intents: { attack: '⚔️ 即将攻击', charge: '⚡ 沙暴蓄力中！(推荐破防!)', guard: '🛡️ 法术护盾' },
         skills: [
           { id: 'nile', name: '🌊 尼罗红浪', desc: '全体伤害 28 (MP 0)' },
           { id: 'frogs', name: '🐸 跳跳蛙大军', desc: '单体强击 42 (MP 15)' },
@@ -159,7 +163,9 @@
       },
       sinai: {
         manna: '收集吗哪', purified: '净化暗影', time: '剩余光辉时间',
-        hint: '移动准星并点击（或按空格）发射圣光弹！接住金色吗哪并净化紫色暗影！'
+        fever: '狂热 x3!', bossName: '暗影蛇守护者',
+        skills: { sunburst: '☀️ 西奈荣耀光柱！(Shift)' },
+        hint: '连续命中开启3发狂热！按Shift释放荣耀光柱并击败暗影蛇首领！'
       }
     },
     speakers: {

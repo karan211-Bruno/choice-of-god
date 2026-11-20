@@ -123,22 +123,26 @@
     },
     stageUi: {
       eden: {
-        stars: 'Estrellas', bossHp: 'Serpiente Chibi Jefe', hearts: 'Corazones',
-        hint: 'WASD/Flechas: Mover · Espacio/Clic: Corte de Luz · Shift: Rodar · E: Hablar'
+        stars: 'Estrellas', bossHp: 'Serpiente Chibi Jefe', hearts: 'Corazones', combo: 'Combo',
+        skills: { spin: '🌀 Giro Radiante (Q)', angelBurst: '✨ Rayo Ángel + Cura (R)' },
+        hint: 'WASD/Flechas: Mover · Espacio/Clic: Combo x3 · Shift: Rodar · Q/R: Skills · E: Hablar'
       },
       ark: {
         timber: 'Madera Gofer', pitch: 'Brea', animals: 'Crías A Bordo', arkProg: 'Progreso del Arca',
+        driftwood: '🪵 Madera Flotante (+4)', rainBoost: '🌧️ ¡Lluvia de Bendición! ¡Brea x2!',
         tools: { mill: '🪵 Aserradero (Gratis)', well: '🏺 Pozo Brea (3 Mad)', pen: '🐑 Refugio Animal (4 Mad)', buildArk: '🚢 Construir Arca (+25% · 6 Mad, 4 Brea)' },
-        harvestTip: '¡Haz clic en la hierba para construir y vuelve a hacer clic en tus talleres para cosechar!'
+        harvestTip: '¡Haz clic en la hierba y Noé correrá a martillar y mejorar cada taller!'
       },
       abraham: {
         turn: 'Turno', faith: 'Fe', food: 'Víveres', shrines: 'Altares Estelares',
-        hint: '¡Haz clic en hexágonos adyacentes iluminados para guiar a Abraham hasta Moriah (arriba-der.)!'
+        skills: { starBolt: '⭐ Rayo Estelar (8 Fe)', peace: '🕊️ Enviado de Paz (6 Víveres)' },
+        hint: '¡Camina por hexágonos iluminados y usa milagros hacia el monte Moriah!'
       },
       plagues: {
         mosesParty: 'Moisés y Aarón', enemyParty: 'Faraón y Mago',
         turnPlayer: 'Turno de Moisés — ¡Elige un Milagro!',
         turnEnemy: 'Faraón prepara un contraataque...',
+        intents: { attack: '⚔️ Ataque Entrante', charge: '⚡ ¡Cargando Tormenta! (¡Rómpelo!)', guard: '🛡️ Sello Mágico' },
         skills: [
           { id: 'nile', name: '🌊 Ola Carmesí del Nilo', desc: 'Daña a todos 28 (0 MP)' },
           { id: 'frogs', name: '🐸 Ranas Saltarinas', desc: 'Golpe único 42 (15 MP)' },
@@ -159,7 +163,9 @@
       },
       sinai: {
         manna: 'Maná Recogido', purified: 'Sombras Purificadas', time: 'Luz Restante',
-        hint: '¡Apunta con ratón o dedo y Clic (o Espacio) para disparar luz! ¡Recoge Maná y purifica sombras!'
+        fever: '¡FIEBRE x3!', bossName: 'Guardián Serpiente Sombría',
+        skills: { sunburst: '☀️ ¡Rayo del Sinaí! (Shift)' },
+        hint: '¡Encadena aciertos para Fiebre x3! Usa Shift para Rayo Solar y vence al Guardián!'
       }
     },
     speakers: {

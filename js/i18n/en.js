@@ -123,22 +123,26 @@
     },
     stageUi: {
       eden: {
-        stars: 'Stars', bossHp: 'Chibi Serpent Boss', hearts: 'Hearts',
-        hint: 'WASD/Arrows: Move · Space/Click: Light Slash · Shift: Dash · E: Talk to Angel/Tree'
+        stars: 'Stars', bossHp: 'Chibi Serpent Boss', hearts: 'Hearts', combo: 'Combo',
+        skills: { spin: '🌀 Radiant Spin (Q)', angelBurst: '✨ Angel Burst + Heal (R)' },
+        hint: 'WASD/Arrows: Move · Space/Click: 3-Hit Combo · Shift: Dash · Q/R: Skills · E: Talk'
       },
       ark: {
         timber: 'Gopher Wood', pitch: 'Pitch', animals: 'Baby Animals', arkProg: 'Ark Progress',
+        driftwood: '🪵 Driftwood (+4)', rainBoost: '🌧️ Blessing Rain! Pitch x2!',
         tools: { mill: '🪵 Timber Mill (Free)', well: '🏺 Pitch Well (3 Wood)', pen: '🐑 Cozy Animal Pen (4 Wood)', buildArk: '🚢 Build Ark (+25% · 6 Wood, 4 Pitch)' },
-        harvestTip: 'Click grass tiles to build, and click built workshops anytime to harvest extra resources!'
+        harvestTip: 'Click grass plots — Noah runs over and hammers each workshop up to Lv.3!'
       },
       abraham: {
         turn: 'Turn', faith: 'Faith', food: 'Food', shrines: 'Star Shrines',
-        hint: 'Click highlighted adjacent hex tiles to march Abraham toward Mount Moriah (top-right)!'
+        skills: { starBolt: '⭐ Starlight Bolt (8 Faith)', peace: '🕊️ Peace Envoy (6 Food)' },
+        hint: 'Click highlighted hexes to march across Canaan or cast skills to break raiders!'
       },
       plagues: {
         mosesParty: 'Moses & Aaron', enemyParty: 'Pharaoh & Magician',
         turnPlayer: 'Moses’s Turn — Choose a Miracle Skill!',
         turnEnemy: 'Pharaoh prepares a counterattack...',
+        intents: { attack: '⚔️ Attack Incoming', charge: '⚡ Sandstorm Charging! (Break It!)', guard: '🛡️ Arcane Ward' },
         skills: [
           { id: 'nile', name: '🌊 Crimson Nile Wave', desc: 'Hit all foes for 28 dmg (0 MP)' },
           { id: 'frogs', name: '🐸 Bouncing Frogs', desc: 'Heavy single hit 42 dmg (15 MP)' },
@@ -159,7 +163,9 @@
       },
       sinai: {
         manna: 'Manna Caught', purified: 'Shadows Purified', time: 'Sunlight Left',
-        hint: 'Aim with mouse or touch and Click (or Space) to fire light! Catch golden Manna and purify purple wisps!'
+        fever: 'FEVER x3!', bossName: 'Shadow Serpent Guardian',
+        skills: { sunburst: '☀️ Sinai Sunburst! (Shift)' },
+        hint: 'Chain hits for x3 Fever spread! Press Shift for Sunburst beam & defeat the Guardian!'
       }
     },
     speakers: {

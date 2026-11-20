@@ -32,7 +32,19 @@
     bld_pen: './assets/sprites/bld_pen.png',
     prop_tree_life: './assets/sprites/prop_tree_life.png',
     prop_tree_forb: './assets/sprites/prop_tree_forb.png',
-    bld_tabernacle: './assets/sprites/bld_tabernacle.png'
+    bld_tabernacle: './assets/sprites/bld_tabernacle.png',
+
+    hero_adam_sheet: './assets/sprites/sheets/hero_adam_sheet.png',
+    hero_noah_sheet: './assets/sprites/sheets/hero_noah_sheet.png',
+    hero_abraham_sheet: './assets/sprites/sheets/hero_abraham_sheet.png',
+    hero_moses_sheet: './assets/sprites/sheets/hero_moses_sheet.png',
+    hero_aaron_sheet: './assets/sprites/sheets/hero_aaron_sheet.png',
+    unit_angel_sheet: './assets/sprites/sheets/unit_angel_sheet.png',
+    unit_knight_sheet: './assets/sprites/sheets/unit_knight_sheet.png',
+    unit_miriam_sheet: './assets/sprites/sheets/unit_miriam_sheet.png',
+    boss_serpent_sheet: './assets/sprites/sheets/boss_serpent_sheet.png',
+    boss_pharaoh_sheet: './assets/sprites/sheets/boss_pharaoh_sheet.png',
+    enemy_magician_sheet: './assets/sprites/sheets/enemy_magician_sheet.png'
   };
 
   var cache = {};
@@ -134,6 +146,60 @@
     return true;
   }
 
+  function drawAnimFrame(ctx, sheetKey, frameIdx, x, y, opts) {
+    var img = get(sheetKey);
+    if (!img) return false;
+    opts = opts || {};
+
+    var fw = img.naturalWidth / 4;
+    var fh = img.naturalHeight;
+    if (fw <= 0 || fh <= 0) return false;
+
+    var f = Math.max(0, Math.min(3, Math.floor(frameIdx || 0)));
+    var targetH = (opts.height || 96) * 1.08;
+    var targetW = targetH * (fw / fh);
+    var anchorY = typeof opts.anchorY === 'number' ? opts.anchorY : 0.95;
+    var bob = opts.bob || 0;
+    var sx = opts.squashX || 1;
+    var sy = opts.squashY || 1;
+
+    ctx.save();
+    if (typeof opts.alpha === 'number') ctx.globalAlpha = opts.alpha;
+
+    if (!opts.noShadow) {
+      var srx = opts.shadowRx || Math.max(15, targetW * 0.24);
+      var sry = opts.shadowRy || Math.max(5, targetW * 0.08);
+      var syPos = y + (opts.shadowY || 2);
+      ctx.fillStyle = 'rgba(34, 22, 12, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(x, syPos, srx, sry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (opts.glowColor) {
+      var gr = opts.glowRadius || targetH * 0.5;
+      var grad = ctx.createRadialGradient(x, y - targetH * 0.42, 4, x, y - targetH * 0.42, gr);
+      grad.addColorStop(0, opts.glowColor);
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y - targetH * 0.42, gr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.translate(x, y - bob);
+    if (opts.rot) ctx.rotate(opts.rot);
+    ctx.scale((opts.flipX ? -1 : 1) * sx, sy);
+
+    if (opts.hitFlash) {
+      ctx.filter = 'brightness(1.55) contrast(1.08)';
+    }
+
+    ctx.drawImage(img, f * fw, 0, fw, fh, -targetW * 0.5, -targetH * anchorY, targetW, targetH);
+    ctx.restore();
+    return true;
+  }
+
   function drawLevelBadge(ctx, x, y, label, fillColor) {
     ctx.save();
     ctx.font = '900 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
@@ -215,6 +281,7 @@
     getStats: getStats,
     drawCover: drawCover,
     drawSprite: drawSprite,
+    drawAnimFrame: drawAnimFrame,
     drawLevelBadge: drawLevelBadge,
     drawGlossyBar: drawGlossyBar,
     drawUpgradeArrow: drawUpgradeArrow

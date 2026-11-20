@@ -1,7 +1,7 @@
 {
   "name": "choice-of-god-desktop",
-  "version": "4.0.0",
-  "description": "Choice of God v4.0 - SD Chibi & 2.5D Isometric Multi-Genre RPG Desktop Wrapper",
+  "version": "5.0.0",
+  "description": "Choice of God v5.0 - 4-Frame Animated SD Chibi & 2.5D Isometric Multi-Genre RPG Desktop Wrapper",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

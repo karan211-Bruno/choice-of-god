@@ -1,4 +1,4 @@
-const CACHE_NAME = 'choice-of-god-v4.0.0';
+const CACHE_NAME = 'choice-of-god-v5.0.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -40,6 +40,17 @@ const CORE_ASSETS = [
   './assets/sprites/prop_tree_life.png',
   './assets/sprites/prop_tree_forb.png',
   './assets/sprites/bld_tabernacle.png',
+  './assets/sprites/sheets/hero_adam_sheet.png',
+  './assets/sprites/sheets/hero_noah_sheet.png',
+  './assets/sprites/sheets/hero_abraham_sheet.png',
+  './assets/sprites/sheets/hero_moses_sheet.png',
+  './assets/sprites/sheets/hero_aaron_sheet.png',
+  './assets/sprites/sheets/unit_angel_sheet.png',
+  './assets/sprites/sheets/unit_knight_sheet.png',
+  './assets/sprites/sheets/unit_miriam_sheet.png',
+  './assets/sprites/sheets/boss_serpent_sheet.png',
+  './assets/sprites/sheets/boss_pharaoh_sheet.png',
+  './assets/sprites/sheets/enemy_magician_sheet.png',
   './js/i18n/ko.js',
   './js/i18n/en.js',
   './js/i18n/ja.js',
@@ -54,6 +65,7 @@ const CORE_ASSETS = [
   './js/engine/state.js',
   './js/engine/audio.js',
   './js/engine/spriteLoader.js',
+  './js/engine/vfx.js',
   './js/engine/chibiSprites.js',
   './js/engine/stageHost.js',
   './js/stages/stage1_eden_arpg.js',
@@ -88,6 +100,29 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const reqUrl = new URL(event.request.url);
+  const isCodeOrDoc =
+    event.request.mode === 'navigate' ||
+    /\.(html|js|css|webmanifest)$/i.test(reqUrl.pathname) ||
+    reqUrl.pathname.endsWith('/');
+
+  if (isCodeOrDoc) {
+    // Network-First for HTML/JS/CSS so online reloads always get latest release instead of stale versions
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((c) => c || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Cache-First for immutable visual assets (images/icons)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

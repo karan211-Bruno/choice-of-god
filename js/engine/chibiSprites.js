@@ -53,25 +53,36 @@
     ctx.stroke();
   }
 
-  function drawSlashRibbon(ctx, x, y, facingAngle, attackTimer) {
-    var prog = 1 - Math.min(1, attackTimer / 0.22);
-    ctx.save();
-    ctx.translate(x, y - 24);
-    ctx.rotate(facingAngle || 0);
+  function selectFrame(opts, t) {
+    if (typeof opts.frame === 'number') return opts.frame;
+    if (opts.attackTimer > 0 || opts.animState === 'attack') return 3;
+    if (opts.moving || opts.animState === 'run') return (Math.floor(t * 9.5) % 2 === 0 ? 1 : 2);
+    return 0;
+  }
 
-    var r = 52;
-    ctx.globalAlpha = Math.max(0.15, 1 - prog * 0.65);
-    ctx.strokeStyle = '#fde047';
-    ctx.lineWidth = 11 * (1 - prog * 0.45);
+  function drawSlashRibbon(ctx, x, y, facingAngle, attackTimer, comboIdx) {
+    var prog = 1 - Math.min(1, attackTimer / 0.24);
+    var col = comboIdx === 3 ? '#fb7185' : (comboIdx === 2 ? '#facc15' : '#fde047');
+    var rev = comboIdx === 2 ? -1 : 1;
+    var r = comboIdx === 3 ? 66 : 54;
+
+    ctx.save();
+    ctx.translate(x, y - 26);
+    ctx.rotate(facingAngle || 0);
+    ctx.scale(1, rev);
+
+    ctx.globalAlpha = Math.max(0.18, 1 - prog * 0.65);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = (comboIdx === 3 ? 15 : 11) * (1 - prog * 0.45);
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.arc(0, 0, r, -1.05 + prog * 0.35, 0.95 + prog * 0.25);
+    ctx.arc(0, 0, r, -1.1 + prog * 0.38, 1.0 + prog * 0.28);
     ctx.stroke();
 
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 4.5 * (1 - prog * 0.4);
     ctx.beginPath();
-    ctx.arc(0, 0, r - 3, -0.9 + prog * 0.35, 0.8 + prog * 0.25);
+    ctx.arc(0, 0, r - 3, -0.92 + prog * 0.38, 0.85 + prog * 0.28);
     ctx.stroke();
     ctx.restore();
   }
@@ -91,64 +102,74 @@
       knight: 'unit_knight'
     };
     var spriteKey = keyMap[kind] || 'hero_adam';
+    var sheetKey = spriteKey + '_sheet';
+    var frame = selectFrame(opts, t);
     var targetH = (opts.height || 92) * scale;
-    var bob = opts.moving ? Math.abs(Math.sin(t * 15)) * 6 : Math.sin(t * 3.5) * 1.5;
+    var isRun = (opts.moving || opts.animState === 'run') && frame !== 3;
+    var bob = frame === 3 ? 4 : (isRun ? Math.abs(Math.sin(t * 14)) * 5 : Math.sin(t * 3.5) * 1.2);
     var flipX = typeof opts.flipX === 'boolean'
       ? opts.flipX
       : (typeof opts.facingAngle === 'number' && Math.cos(opts.facingAngle) < -0.15);
-    var squashY = opts.moving
-      ? (1 + Math.sin(t * 30) * 0.045)
-      : (1 + Math.sin(t * 3.8) * 0.025);
+    var squashY = frame === 3
+      ? 1.04
+      : (isRun ? (1 + Math.sin(t * 28) * 0.04) : (1 + Math.sin(t * 3.8) * 0.022));
     var squashX = 1 / squashY;
     var alpha = (opts.invuln > 0 && Math.floor(t * 16) % 2 === 0) ? 0.52 : 1;
 
-    if (Sp && Sp.drawSprite(ctx, spriteKey, x, y, {
+    var drawOpts = {
+      height: targetH,
+      anchorY: 0.94,
+      bob: bob,
+      flipX: flipX,
+      squashX: squashX,
+      squashY: squashY,
+      rot: opts.rot || (isRun ? Math.sin(t * 14) * 0.045 : 0),
+      alpha: alpha,
+      hitFlash: opts.hitFlash,
+      glowColor: opts.glowColor
+    };
+
+    var rendered = false;
+    if (Sp && Sp.drawAnimFrame && Sp.drawAnimFrame(ctx, sheetKey, frame, x, y, drawOpts)) {
+      rendered = true;
+    } else if (Sp && Sp.drawSprite(ctx, spriteKey, x, y, {
       height: targetH,
       anchorY: 0.88,
       bob: bob,
       flipX: flipX,
       squashX: squashX,
       squashY: squashY,
-      rot: opts.moving ? Math.sin(t * 15) * 0.055 : 0,
+      rot: drawOpts.rot,
       alpha: alpha,
       hitFlash: opts.hitFlash,
       glowColor: opts.glowColor
     })) {
+      rendered = true;
+    }
+
+    if (rendered) {
       if (opts.attackTimer > 0) {
-        drawSlashRibbon(ctx, x, y, opts.facingAngle || 0, opts.attackTimer);
+        drawSlashRibbon(ctx, x, y, opts.facingAngle || 0, opts.attackTimer, opts.comboIdx || 1);
       }
       if (opts.lv && Sp.drawLevelBadge) {
-        Sp.drawLevelBadge(ctx, x, y - targetH * 0.96 - bob, 'Lv.' + opts.lv, '#fde047');
+        Sp.drawLevelBadge(ctx, x, y - targetH * 1.0 - bob, 'Lv.' + opts.lv, '#fde047');
       }
       return;
     }
 
-    // Procedural fallback before sprite image finishes decoding
+    // Procedural fallback before image load
     var blink = (t % 4.2) > 4.08;
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(scale, scale);
     drawShadow(ctx, 0, 22, 18, 6);
-
-    var colors = {
-      adam_eve: { tunic: '#a7f3d0', trim: '#10b981', hair: '#92400e', band: '#facc15' },
-      noah: { tunic: '#93c5fd', trim: '#2563eb', hair: '#f8fafc', band: '#a16207' },
-      abraham: { tunic: '#fde68a', trim: '#d97706', hair: '#f8fafc', band: '#b45309' },
-      moses: { tunic: '#fed7aa', trim: '#ea580c', hair: '#78350f', band: '#facc15' },
-      aaron: { tunic: '#e9d5ff', trim: '#9333ea', hair: '#cbd5e1', band: '#fbbf24' },
-      miriam: { tunic: '#a5f3fc', trim: '#0891b2', hair: '#78350f', band: '#fde047' },
-      knight: { tunic: '#bae6fd', trim: '#0284c7', hair: '#94a3b8', band: '#facc15' }
-    }[kind] || { tunic: '#a7f3d0', trim: '#10b981', hair: '#92400e', band: '#facc15' };
-
-    ctx.fillStyle = colors.tunic;
+    ctx.fillStyle = '#a7f3d0';
     ctx.strokeStyle = INK; ctx.lineWidth = 2;
     roundRect(ctx, -14, -4 - bob, 28, 22, 11); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#fde6cd';
     ctx.beginPath(); ctx.arc(0, -18 - bob, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = colors.hair;
-    ctx.beginPath(); ctx.arc(0, -22 - bob, 17.5, Math.PI * 0.92, Math.PI * 2.08); ctx.fill(); ctx.stroke();
     drawCuteFace(ctx, 0, -16 - bob, 6.5, blink, false);
-    if (opts.attackTimer > 0) drawSlashRibbon(ctx, 0, 20, opts.facingAngle || 0, opts.attackTimer);
+    if (opts.attackTimer > 0) drawSlashRibbon(ctx, 0, 20, opts.facingAngle || 0, opts.attackTimer, opts.comboIdx || 1);
     ctx.restore();
   }
 
@@ -156,17 +177,29 @@
     scale = scale || 1;
     opts = opts || {};
     var Sp = root.COG.Sprites;
-    var floatY = Math.sin(t * 4.5) * 5;
+    var floatY = Math.sin(t * 4.8) * 5;
     var targetH = (opts.height || 78) * scale;
+    var frame = typeof opts.frame === 'number'
+      ? opts.frame
+      : ((opts.attackTimer > 0 || opts.animState === 'attack') ? 3 : ((Math.floor(t * 6.5) % 2 === 0) ? 1 : 2));
 
-    if (Sp && Sp.drawSprite(ctx, 'unit_angel', x, y + floatY, {
+    var sheetOk = Sp && Sp.drawAnimFrame && Sp.drawAnimFrame(ctx, 'unit_angel_sheet', frame, x, y + floatY, {
+      height: targetH,
+      anchorY: 0.92,
+      squashY: 1 + Math.sin(t * 4.5) * 0.03,
+      shadowY: 16 - floatY,
+      flipX: opts.flipX,
+      glowColor: 'rgba(186, 230, 253, 0.42)'
+    });
+
+    if (sheetOk || (Sp && Sp.drawSprite(ctx, 'unit_angel', x, y + floatY, {
       height: targetH,
       anchorY: 0.85,
       squashY: 1 + Math.sin(t * 4.5) * 0.03,
       shadowY: 16 - floatY,
       flipX: opts.flipX,
       glowColor: 'rgba(186, 230, 253, 0.42)'
-    })) {
+    }))) {
       return;
     }
 
@@ -181,10 +214,6 @@
     ctx.beginPath(); ctx.ellipse(18, -4 + flap * 0.4, 12, 7, 0.35, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#e0f2fe';
     roundRect(ctx, -11, -6, 22, 19, 9); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = color || '#38bdf8';
-    roundRect(ctx, -5, -5, 10, 17, 4); ctx.fill();
-    ctx.fillStyle = '#fde6cd';
-    ctx.beginPath(); ctx.arc(0, -16, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     drawCuteFace(ctx, 0, -15, 5, false, false);
     ctx.restore();
   }
@@ -203,7 +232,7 @@
         anchorY: 0.88,
         bob: hop,
         flipX: opts.flipX,
-        squashY: 1 + Math.sin(t * 5.2) * 0.04
+        squashY: 1 + Math.sin(t * 5.2) * 0.045
       })) {
         return;
       }
@@ -227,16 +256,10 @@
     } else if (kind === 'lion') {
       ctx.fillStyle = '#d97706';
       ctx.beginPath(); ctx.arc(0, -4, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#fde68a';
-      ctx.beginPath(); ctx.arc(0, -4, 10, 0, Math.PI * 2); ctx.fill();
       drawCuteFace(ctx, 0, -5, 4.5, false, false);
     } else {
       ctx.fillStyle = '#fffbeb';
-      [[-8, -6], [8, -6], [-10, 2], [10, 2], [0, -10], [0, 3]].forEach(function (o) {
-        ctx.beginPath(); ctx.arc(o[0], o[1], 7.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      });
-      ctx.fillStyle = '#fde6cd';
-      ctx.beginPath(); ctx.arc(0, -2, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, -2, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       drawCuteFace(ctx, 0, -3, 4, false, false);
     }
     ctx.restore();
@@ -247,19 +270,30 @@
     opts = opts || {};
     var Sp = root.COG.Sprites;
     var targetH = (opts.height || (isBoss ? 114 : 74)) * scale;
-    var slither = Math.sin(t * 5 + x * 0.05) * 3;
+    var slither = Math.sin(t * 5.2 + x * 0.05) * 3;
+    var frame = selectFrame(opts, t);
 
-    if (Sp && Sp.drawSprite(ctx, 'boss_serpent', x, y, {
+    var rendered = Sp && Sp.drawAnimFrame && Sp.drawAnimFrame(ctx, 'boss_serpent_sheet', frame, x, y, {
+      height: targetH,
+      anchorY: 0.92,
+      bob: Math.abs(slither),
+      flipX: opts.flipX,
+      squashY: 1 + Math.sin(t * 5 + x) * 0.04,
+      hitFlash: opts.hitFlash,
+      glowColor: opts.glowColor || (isBoss ? 'rgba(192, 132, 252, 0.45)' : null)
+    });
+
+    if (rendered || (Sp && Sp.drawSprite(ctx, 'boss_serpent', x, y, {
       height: targetH,
       anchorY: 0.88,
       bob: Math.abs(slither),
       flipX: opts.flipX,
       squashY: 1 + Math.sin(t * 5 + x) * 0.04,
       hitFlash: opts.hitFlash,
-      glowColor: isBoss ? 'rgba(192, 132, 252, 0.45)' : null
-    })) {
+      glowColor: opts.glowColor || (isBoss ? 'rgba(192, 132, 252, 0.45)' : null)
+    }))) {
       if (isBoss && Sp.drawLevelBadge) {
-        Sp.drawLevelBadge(ctx, x, y - targetH * 0.94, 'BOSS', '#fb7185');
+        Sp.drawLevelBadge(ctx, x, y - targetH * 0.98, 'BOSS', '#fb7185');
       }
       return;
     }
@@ -284,17 +318,27 @@
     var key = isBoss ? 'boss_pharaoh' : 'enemy_magician';
     var targetH = (opts.height || (isBoss ? 104 : 88)) * scale;
     var dx = opts.lungeX || 0;
+    var frame = selectFrame(opts, t);
 
-    if (Sp && Sp.drawSprite(ctx, key, x + dx, y, {
+    var rendered = Sp && Sp.drawAnimFrame && Sp.drawAnimFrame(ctx, key + '_sheet', frame, x + dx, y, {
+      height: targetH,
+      anchorY: 0.94,
+      squashY: 1 + Math.sin(t * 3.6 + (isBoss ? 0 : 1.2)) * 0.028,
+      flipX: opts.flipX,
+      hitFlash: opts.hitFlash,
+      glowColor: opts.glowColor || (isBoss ? 'rgba(251, 191, 36, 0.34)' : null)
+    });
+
+    if (rendered || (Sp && Sp.drawSprite(ctx, key, x + dx, y, {
       height: targetH,
       anchorY: 0.88,
       squashY: 1 + Math.sin(t * 3.6 + (isBoss ? 0 : 1.2)) * 0.028,
       flipX: opts.flipX,
       hitFlash: opts.hitFlash,
-      glowColor: isBoss ? 'rgba(251, 191, 36, 0.34)' : null
-    })) {
+      glowColor: opts.glowColor || (isBoss ? 'rgba(251, 191, 36, 0.34)' : null)
+    }))) {
       if (opts.lv && Sp.drawLevelBadge) {
-        Sp.drawLevelBadge(ctx, x + dx, y - targetH * 0.94, opts.lv, '#fb7185');
+        Sp.drawLevelBadge(ctx, x + dx, y - targetH * 1.0, opts.lv, '#fb7185');
       }
       return;
     }
@@ -307,8 +351,6 @@
     ctx.strokeStyle = INK; ctx.lineWidth = 2;
     ctx.fillStyle = isBoss ? '#facc15' : '#94a3b8';
     ctx.beginPath(); ctx.moveTo(-19, -20); ctx.lineTo(0, -34); ctx.lineTo(19, -20); ctx.lineTo(22, -2); ctx.lineTo(-22, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = isBoss ? '#fb7185' : '#cbd5e1';
-    roundRect(ctx, -13, -4, 26, 22, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#f6d5b0';
     ctx.beginPath(); ctx.arc(0, -16, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     drawCuteFace(ctx, 0, -16, 5.5, false, true);
@@ -318,20 +360,34 @@
   function drawChariot(ctx, x, y, t, isBoss, opts) {
     opts = opts || {};
     var Sp = root.COG.Sprites;
-    var jolt = Math.abs(Math.sin(t * 14 + x * 0.05)) * 2.5;
-    var targetH = opts.height || (isBoss ? 104 : 76);
+    var jolt = Math.abs(Math.sin(t * 16 + x * 0.05)) * 3.5;
+    var targetH = opts.height || (isBoss ? 108 : 78);
 
     if (Sp && Sp.drawSprite(ctx, 'enemy_chariot', x, y, {
       height: targetH,
       anchorY: 0.86,
       bob: jolt,
       flipX: opts.flipX,
-      squashY: 1 + Math.sin(t * 14) * 0.03,
+      rot: Math.sin(t * 16) * 0.03,
+      squashY: 1 + Math.sin(t * 16) * 0.04,
       hitFlash: opts.hitFlash,
-      glowColor: isBoss ? 'rgba(244, 63, 94, 0.4)' : null
+      glowColor: isBoss ? 'rgba(244, 63, 94, 0.44)' : null
     })) {
+      // Animated spinning golden wheel gleam markers
+      ctx.save();
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.75)';
+      ctx.lineWidth = 2.2;
+      var ang = -t * 12;
+      var wy = y - 10 - jolt;
+      [x - 16, x + 16].forEach(function (wx) {
+        ctx.beginPath();
+        ctx.arc(wx, wy, 7, ang, ang + 1.4);
+        ctx.stroke();
+      });
+      ctx.restore();
+
       if (isBoss && Sp.drawLevelBadge) {
-        Sp.drawLevelBadge(ctx, x, y - targetH * 0.92, 'BOSS', '#fb7185');
+        Sp.drawLevelBadge(ctx, x, y - targetH * 0.94, 'BOSS', '#fb7185');
       }
       return;
     }
@@ -342,10 +398,6 @@
     ctx.strokeStyle = INK; ctx.lineWidth = 2.2;
     ctx.fillStyle = isBoss ? '#e11d48' : '#d97706';
     roundRect(ctx, -20, -14, 40, 22, 8); ctx.fill(); ctx.stroke();
-    [-12, 12].forEach(function (wx) {
-      ctx.fillStyle = '#fbbf24';
-      ctx.beginPath(); ctx.arc(wx, 11, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    });
     ctx.restore();
   }
 
@@ -361,7 +413,7 @@
     };
     var key = map[kind];
     var h = opts.height || 86;
-    var pop = opts.bob > 0 ? (1 + Math.sin(opts.bob * Math.PI) * 0.16) : 1;
+    var pop = opts.bob > 0 ? (1 + Math.sin(opts.bob * Math.PI) * 0.18) : 1;
 
     if (key && Sp && Sp.drawSprite(ctx, key, x, y, {
       height: h,
@@ -371,7 +423,8 @@
       shadowRx: h * 0.42,
       shadowRy: h * 0.16,
       shadowY: 4,
-      glowColor: opts.glowColor
+      glowColor: opts.glowColor,
+      glowRadius: opts.glowRadius
     })) {
       if (opts.level && Sp.drawLevelBadge) {
         Sp.drawLevelBadge(ctx, x, y - h * 0.72, 'Lv.' + opts.level, '#fde047');
@@ -470,6 +523,7 @@
     roundRect: roundRect,
     drawShadow: drawShadow,
     drawCuteFace: drawCuteFace,
+    selectFrame: selectFrame,
     drawChibiHero: drawChibiHero,
     drawCuteAngel: drawCuteAngel,
     drawCuteAnimal: drawCuteAnimal,

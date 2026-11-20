@@ -123,22 +123,26 @@
     },
     stageUi: {
       eden: {
-        stars: '創造の星', bossHp: 'ちび魔王ヘビ', hearts: 'ハート',
-        hint: 'WASD/矢印で移動 · Space/クリックで光の剣撃 · Shiftで回避 · Eで天使・木と会話'
+        stars: '創造の星', bossHp: 'ちび魔王ヘビ', hearts: 'ハート', combo: 'コンボ',
+        skills: { spin: '🌀 光の旋風斬 (Q)', angelBurst: '✨ 天使光線+回復 (R)' },
+        hint: 'WASD/矢印移動 · Space/クリック3段コンボ · Shift回避 · Q/Rスキル · E会話'
       },
       ark: {
         timber: 'ゴフェルの木', pitch: 'アスファルト', animals: '乗船動物', arkProg: '方舟完成度',
+        driftwood: '🪵 漂流木材 (+4)', rainBoost: '🌧️ 恵みの雨！アスファルト2倍！',
         tools: { mill: '🪵 製材所 (無料)', well: '🏺 アスファルト井戸 (木3)', pen: '🐑 動物小屋 (木4)', buildArk: '🚢 方舟を造る (+25% · 木6, 瀝4)' },
-        harvestTip: '草原タイルをクリックして建設！建てた施設をもう一度クリックすると資源が集まります！'
+        harvestTip: '草原をクリックするとノアが駆けつけて建設＆レベルアップします！'
       },
       abraham: {
         turn: 'ターン', faith: '信仰', food: '食料', shrines: '星の聖所',
-        hint: '光る隣接ヘックスをクリックしてアブラハム一行をモリヤ山(右上)へ導きましょう！'
+        skills: { starBolt: '⭐ 星光の稲妻 (信仰8)', peace: '🕊️ 平和の使者 (食料6)' },
+        hint: '光る隣接ヘックスへ歩み、スキルで略奪者を突破してモリヤ山へ！'
       },
       plagues: {
         mosesParty: 'モーセ＆アロン', enemyParty: 'ファラオ＆魔術師',
         turnPlayer: 'モーセのターン — 奇跡スキルを選択！',
         turnEnemy: 'ファラオが反撃の準備をしています...',
+        intents: { attack: '⚔️ 攻撃予告', charge: '⚡ 砂嵐チャージ！(攻撃でブレイク)', guard: '🛡️ 魔法防御' },
         skills: [
           { id: 'nile', name: '🌊 紅のナイル波', desc: '敵全体28ダメージ (MP 0)' },
           { id: 'frogs', name: '🐸 ぴょんぴょん蛙行進', desc: '単体42ダメージ (MP 15)' },
@@ -159,7 +163,9 @@
       },
       sinai: {
         manna: '集めたマナ', purified: '浄化した影', time: '残りの光時間',
-        hint: 'マウス/タッチで狙ってクリック(またはSpace)！金色のマナを集め、紫の影を浄化しよう！'
+        fever: 'フィーバー x3!', bossName: '影ヘビの守護者',
+        skills: { sunburst: '☀️ シナイ栄光ビーム！(Shift)' },
+        hint: '連続命中で3連射フィーバー！Shiftで栄光ビームを放ちボスを浄化！'
       }
     },
     speakers: {

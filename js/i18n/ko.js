@@ -128,22 +128,26 @@
     },
     stageUi: {
       eden: {
-        stars: '창조의 별', bossHp: '꼬마 대마왕 뱀', hearts: '하트',
-        hint: 'WASD/방향키 이동 · Space/클릭 빛 검기 · Shift 구르기 · E 천사/선악과 대화'
+        stars: '창조의 별', bossHp: '꼬마 대마왕 뱀', hearts: '하트', combo: '콤보',
+        skills: { spin: '🌀 빛의 회오리 (Q)', angelBurst: '✨ 천사 광선 + 회복 (R)' },
+        hint: 'WASD/방향키 이동 · Space/클릭 3연속 콤보 · Shift 구르기 · Q/R 스킬 · E 대화'
       },
       ark: {
         timber: '고페르 목재', pitch: '역청', animals: '탑승 동물', arkProg: '방주 완성도',
+        driftwood: '🪵 표류 목재 (+4)', rainBoost: '🌧️ 축복의 소나기! 역청 2배!',
         tools: { mill: '🪵 목재소 (비용: 무료)', well: '🏺 역청 우물 (목재 3)', pen: '🐑 아기 동물 쉼터 (목재 4)', buildArk: '🚢 방주 짓기 (+25% · 목재 6, 역청 4)' },
-        harvestTip: '초원 타일을 클릭해 건물을 짓고, 지어진 건물을 다시 클릭하면 자원이 쏟아집니다!'
+        harvestTip: '초원 타일을 클릭하면 노아가 직접 달려가 건설·업그레이드합니다!'
       },
       abraham: {
         turn: '턴', faith: '믿음', food: '양식', shrines: '별빛 성소',
-        hint: '반짝이는 인접 육각(Hex) 타일을 클릭해 아브라함 일행을 모리아 산(우상단)까지 이동시키세요!'
+        skills: { starBolt: '⭐ 별빛 번개 (믿음 8)', peace: '🕊️ 화평의 사절 (양식 6)' },
+        hint: '인접 육각 타일로 아브라함을 걸어가게 하거나 스킬로 애굽 약탈자를 돌파하세요!'
       },
       plagues: {
         mosesParty: '모세 & 아론', enemyParty: '바로 & 대술객',
         turnPlayer: '모세의 차례 — 기적 기술을 선택하세요!',
         turnEnemy: '바로가 반격을 준비합니다...',
+        intents: { attack: '⚔️ 공격 예고', charge: '⚡ 모래폭풍 차징! (방패/공격 추천)', guard: '🛡️ 마법 수호' },
         skills: [
           { id: 'nile', name: '🌊 나일강 붉은 물결', desc: '적 전체 피해 28 (MP 0)' },
           { id: 'frogs', name: '🐸 통통 개구리 행진', desc: '단일 집중 피해 42 (MP 15)' },
@@ -164,7 +168,9 @@
       },
       sinai: {
         manna: '수집 만나', purified: '정화한 그림자', time: '남은 빛 시간',
-        hint: '마우스로 조준하고 클릭(또는 Space)하여 빛 구슬을 발사하세요! 황금 만나는 모으고 보라 그림자는 정화!'
+        fever: '피버 x3!', bossName: '그림자 뱀 수호자',
+        skills: { sunburst: '☀️ 시내산 영광 광선! (Shift)' },
+        hint: '연속 명중 시 피버 3발 발사! Shift로 광역 영광 광선을 쏘고 보스 뱀을 정화하세요!'
       }
     },
     speakers: {
