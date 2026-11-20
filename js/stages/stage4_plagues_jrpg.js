@@ -3,10 +3,24 @@
   root.COG = root.COG || {};
   root.COG.STAGES = root.COG.STAGES || {};
 
+  function drawStrokeText(ctx, text, x, y, fill, font) {
+    ctx.save();
+    ctx.font = font || '900 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 4.5;
+    ctx.strokeStyle = '#291709';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = fill || '#fde047';
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
   root.COG.STAGES.plagues = {
     start: function (host, stageObj) {
       var W = host.WIDTH, H = host.HEIGHT;
       var S = root.COG.ChibiSprites;
+      var Sp = root.COG.Sprites;
       var uiT = function () { return host.pack().stageUi.plagues; };
       var bonus = root.COG.State.getPowerBonus();
 
@@ -19,6 +33,10 @@
       var shieldOn = false;
       var playerTurn = true;
       var time = 0;
+      var partyLunge = 0;
+      var enemyLunge = 0;
+      var partyHit = 0;
+      var enemyHit = 0;
       var vfx = [];
       var popups = [];
 
@@ -48,6 +66,7 @@
         if (partyMp < cost) return;
         partyMp -= cost;
         playerTurn = false;
+        partyLunge = 32;
         host.sfx('magic');
 
         var dmg = 0;
@@ -60,12 +79,14 @@
 
         if (dmg > 0) {
           enemyHp = Math.max(0, enemyHp - dmg);
-          vfx.push({ kind: id, x: 690, y: 315, life: 0.65 });
-          popups.push({ x: 690, y: 260, text: '-' + dmg, col: '#e11d48', life: 0.9 });
+          enemyHit = 0.25;
+          vfx.push({ kind: id, x: 705, y: 345, life: 0.72, maxLife: 0.72 });
+          popups.push({ x: 705, y: 195, text: '-' + dmg, col: '#fb7185', life: 0.95 });
         }
         if (heal > 0) {
           partyHp = Math.min(partyMaxHp, partyHp + heal);
-          popups.push({ x: 260, y: 260, text: '+' + heal + ' HP', col: '#10b981', life: 0.9 });
+          vfx.push({ kind: 'heal', x: 255, y: 350, life: 0.65, maxLife: 0.65 });
+          popups.push({ x: 255, y: 195, text: '+' + heal + ' HP', col: '#4ade80', life: 0.95 });
         }
 
         updateHud();
@@ -92,9 +113,11 @@
         shieldOn = false;
         partyHp = Math.max(0, partyHp - dmg);
         partyMp = Math.min(partyMaxMp, partyMp + 12);
+        enemyLunge = 32;
+        partyHit = 0.25;
         host.sfx('hit');
-        vfx.push({ kind: 'enemy', x: 260, y: 315, life: 0.5 });
-        popups.push({ x: 260, y: 260, text: '-' + dmg, col: '#e11d48', life: 0.9 });
+        vfx.push({ kind: 'enemy', x: 260, y: 350, life: 0.55, maxLife: 0.55 });
+        popups.push({ x: 260, y: 195, text: '-' + dmg, col: '#fb7185', life: 0.95 });
 
         if (partyHp <= 0) {
           host.sfx('fail');
@@ -117,65 +140,93 @@
 
       host.onUpdate(function (dt) {
         time += dt;
+        if (partyLunge > 0) partyLunge = Math.max(0, partyLunge - dt * 140);
+        if (enemyLunge > 0) enemyLunge = Math.max(0, enemyLunge - dt * 140);
+        if (partyHit > 0) partyHit = Math.max(0, partyHit - dt);
+        if (enemyHit > 0) enemyHit = Math.max(0, enemyHit - dt);
+
         for (var i = vfx.length - 1; i >= 0; i--) {
           vfx[i].life -= dt;
           if (vfx[i].life <= 0) vfx.splice(i, 1);
         }
         for (var j = popups.length - 1; j >= 0; j--) {
-          popups[j].y -= 28 * dt;
+          popups[j].y -= 30 * dt;
           popups[j].life -= dt;
           if (popups[j].life <= 0) popups.splice(j, 1);
         }
       });
 
       host.onRender(function (ctx) {
-        var sky = ctx.createLinearGradient(0, 0, 0, H);
-        sky.addColorStop(0, '#fed7aa');
-        sky.addColorStop(0.55, '#fef3c7');
-        sky.addColorStop(0.56, '#fde68a');
-        sky.addColorStop(1, '#fcd34d');
-        ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, W, H);
-
-        // Cute pastel pyramids in background
-        ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = S.INK; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(560, 300); ctx.lineTo(660, 175); ctx.lineTo(760, 300); ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(730, 300); ctx.lineTo(805, 205); ctx.lineTo(880, 300); ctx.closePath(); ctx.fill(); ctx.stroke();
-
-        // Moses & Aaron Party (left)
-        S.drawChibiHero(ctx, 230, 355, { kind: 'moses', moving: false, scale: 1.35 }, time);
-        S.drawChibiHero(ctx, 315, 395, { kind: 'aaron', moving: false, scale: 1.15 }, time);
-        if (shieldOn) {
-          ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 4;
-          ctx.beginPath(); ctx.arc(265, 365, 76, 0, Math.PI * 2); ctx.stroke();
+        if (!Sp || !Sp.drawCover(ctx, 'bg_plagues', W, H)) {
+          var sky = ctx.createLinearGradient(0, 0, 0, H);
+          sky.addColorStop(0, '#fed7aa');
+          sky.addColorStop(1, '#fcd34d');
+          ctx.fillStyle = sky;
+          ctx.fillRect(0, 0, W, H);
         }
 
-        // Pharaoh & Magician (right)
-        S.drawCutePharaohOrGuard(ctx, 700, 355, true, time, 1.4);
-        S.drawCutePharaohOrGuard(ctx, 785, 395, false, time, 1.15);
+        // Goshen Passover Golden Dome
+        if (shieldOn) {
+          ctx.save();
+          var g = ctx.createRadialGradient(270, 365, 25, 270, 365, 98);
+          g.addColorStop(0, 'rgba(254, 240, 138, 0.08)');
+          g.addColorStop(1, 'rgba(250, 204, 21, 0.42)');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(270, 365, 98, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#fde047'; ctx.lineWidth = 3.5; ctx.stroke();
+          ctx.restore();
+        }
 
-        // JRPG Overhead HP Bars
-        ctx.fillStyle = '#fff'; ctx.strokeStyle = S.INK; ctx.lineWidth = 2;
-        S.roundRect(ctx, 180, 260, 170, 14, 7); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#22c55e';
-        S.roundRect(ctx, 182, 262, 166 * (partyHp / partyMaxHp), 10, 5); ctx.fill();
+        // Party: Moses & Aaron (Left Side)
+        S.drawChibiHero(ctx, 235 + partyLunge, 408, {
+          kind: 'moses',
+          height: 132,
+          hitFlash: partyHit > 0,
+          lv: root.COG.State.getPlayerLevel()
+        }, time);
+        S.drawChibiHero(ctx, 325 + partyLunge * 0.7, 438, {
+          kind: 'aaron',
+          height: 112,
+          hitFlash: partyHit > 0
+        }, time);
 
-        ctx.fillStyle = '#fff';
-        S.roundRect(ctx, 640, 255, 170, 14, 7); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#fb7185';
-        S.roundRect(ctx, 642, 257, 166 * (enemyHp / enemyMaxHp), 10, 5); ctx.fill();
-
-        // Animated JRPG VFX
-        vfx.forEach(function (fx) {
-          ctx.strokeStyle = fx.kind === 'enemy' ? '#f43f5e' : '#38bdf8';
-          ctx.lineWidth = 6;
-          ctx.beginPath(); ctx.arc(fx.x, fx.y, (0.65 - fx.life) * 140 + 20, 0, Math.PI * 2); ctx.stroke();
+        // Enemies: Pharaoh & Magician (Right Side)
+        S.drawCutePharaohOrGuard(ctx, 695 - enemyLunge, 408, true, time, 1, {
+          height: 142,
+          hitFlash: enemyHit > 0,
+          lv: 'BOSS'
+        });
+        S.drawCutePharaohOrGuard(ctx, 792 - enemyLunge * 0.7, 438, false, time, 1, {
+          height: 112,
+          hitFlash: enemyHit > 0
         });
 
-        ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+        // Glossy JRPG Party & Boss Overhead Gauges
+        if (Sp && Sp.drawGlossyBar) {
+          Sp.drawGlossyBar(ctx, 185, 245, 175, 14, partyHp / partyMaxHp, '#22c55e', '#1c1917');
+          Sp.drawGlossyBar(ctx, 185, 263, 175, 9, partyMp / partyMaxMp, '#38bdf8', '#1c1917');
+          Sp.drawGlossyBar(ctx, 635, 245, 175, 14, enemyHp / enemyMaxHp, '#fb7185', '#1c1917');
+        }
+        drawStrokeText(ctx, 'HP ' + partyHp + '/' + partyMaxHp, 272, 238, '#bbf7d0', '900 13px sans-serif');
+        drawStrokeText(ctx, 'HP ' + enemyHp + '/' + enemyMaxHp, 722, 238, '#fecdd3', '900 13px sans-serif');
+
+        // Multi-ring Miracle VFX
+        vfx.forEach(function (fx) {
+          var prog = 1 - fx.life / fx.maxLife;
+          var col = fx.kind === 'enemy' ? '#f43f5e' : (fx.kind === 'heal' ? '#4ade80' : (fx.kind === 'passover' ? '#facc15' : '#38bdf8'));
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, 1 - prog);
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 7;
+          ctx.beginPath(); ctx.arc(fx.x, fx.y, prog * 115 + 24, 0, Math.PI * 2); ctx.stroke();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(fx.x, fx.y, prog * 80 + 12, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        });
+
         popups.forEach(function (p) {
-          ctx.fillStyle = p.col;
-          ctx.fillText(p.text, p.x, p.y);
+          drawStrokeText(ctx, p.text, p.x, p.y, p.col, '900 22px sans-serif');
         });
       });
     }

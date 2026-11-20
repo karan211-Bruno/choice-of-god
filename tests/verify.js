@@ -25,7 +25,7 @@ for (const file of jsFiles) {
 }
 console.log(`   OK (${jsFiles.length} files passed node --check)`);
 
-console.log('2. Checking PWA & Chibi portrait PNG assets...');
+console.log('2. Checking PWA, Chibi portraits & v4.0 2.5D/SD Sprite assets...');
 const requiredPngs = [
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -41,9 +41,35 @@ for (const rel of requiredPngs) {
   assert(buf.length > 1000, `${rel} too small`);
   assert.strictEqual(buf.slice(0, 8).toString('hex'), '89504e470d0a1a0a', `${rel} invalid PNG signature`);
 }
-console.log(`   OK (${requiredPngs.length} PNG files verified)`);
 
-console.log('3. Loading v3.0 Storybook Multi-Genre data & i18n modules...');
+const Sprites = require(path.join(ROOT, 'js', 'engine', 'spriteLoader.js'));
+const manifestKeys = Object.keys(Sprites.MANIFEST);
+assert.strictEqual(manifestKeys.length, 27, `Expected 27 v4.0 assets in MANIFEST, got ${manifestKeys.length}`);
+let bgCount = 0;
+let rgbaSpriteCount = 0;
+for (const key of manifestKeys) {
+  const rel = Sprites.MANIFEST[key].replace(/^\.\//, '');
+  const full = path.join(ROOT, rel);
+  assert(fs.existsSync(full), `Missing v4.0 asset ${rel}`);
+  const buf = fs.readFileSync(full);
+  if (rel.endsWith('.jpg')) {
+    assert(buf.length > 15000, `BG ${rel} too small (${buf.length} bytes)`);
+    assert(buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff, `BG ${rel} invalid JPEG signature`);
+    bgCount++;
+  } else if (rel.endsWith('.png')) {
+    assert(buf.length > 2000, `Sprite ${rel} too small (${buf.length} bytes)`);
+    assert.strictEqual(buf.slice(0, 8).toString('hex'), '89504e470d0a1a0a', `Sprite ${rel} invalid PNG signature`);
+    assert.strictEqual(buf[25], 6, `Sprite ${rel} must be RGBA color type 6 for alpha transparency, got ${buf[25]}`);
+    rgbaSpriteCount++;
+  } else {
+    assert.fail(`Unexpected asset extension in MANIFEST: ${rel}`);
+  }
+}
+assert.strictEqual(bgCount, 6, 'Expected 6 painted stage backgrounds');
+assert.strictEqual(rgbaSpriteCount, 21, 'Expected 21 transparent RGBA cutout sprites');
+console.log(`   OK (${requiredPngs.length} portraits/icons + ${bgCount} JPG bgs + ${rgbaSpriteCount} RGBA PNG sprites verified)`);
+
+console.log('3. Loading v4.0 Storybook Multi-Genre data & i18n modules...');
 const langs = ['ko', 'en', 'ja', 'es', 'zh'];
 for (const l of langs) require(path.join(ROOT, 'js', 'i18n', `${l}.js`));
 const BIBLE = require(path.join(ROOT, 'js', 'data', 'bible.js'));
@@ -98,6 +124,8 @@ assert.strictEqual(ITEMS.length, 8);
 
 for (const stg of STAGES) {
   assert(fs.existsSync(path.join(ROOT, stg.portrait)), `Missing portrait ${stg.portrait}`);
+  assert(fs.existsSync(path.join(ROOT, stg.bg)), `Missing stage bg ${stg.bg}`);
+  assert(fs.existsSync(path.join(ROOT, stg.heroSprite)), `Missing hero sprite ${stg.heroSprite}`);
   for (const sid of stg.scriptureIds) {
     assert(bibleSet.has(sid), `Stage ${stg.id} unknown scripture ${sid}`);
   }
@@ -134,4 +162,4 @@ assert(State.getPlayerLevel() >= 6, `Expected Lv >= 6, got ${State.getPlayerLeve
 assert.strictEqual(State.getUnlockedGuides().length, 5, 'Expected all 5 cute companions unlocked');
 
 console.log('   OK (All state & progression checks passed)');
-console.log('ALL v3.0 STORYBOOK VERIFICATION CHECKS PASSED!');
+console.log('ALL v4.0 SD SPRITE & 2.5D ISOMETRIC VERIFICATION CHECKS PASSED!');

@@ -57,6 +57,19 @@
       card.style.borderTopColor = stage.accent;
       card.style.borderTopWidth = '5px';
 
+      if (stage.bg && stage.heroSprite) {
+        var banner = document.createElement('div');
+        banner.className = 'card-scene-banner';
+        banner.innerHTML = '<img class="card-scene-bg" src="' + stage.bg + '" alt="">' +
+          '<div class="card-banner-scrim"></div>' +
+          '<div class="card-banner-badges">' +
+          '<span class="genre-badge">' + t('genres.' + stage.genreId) + '</span>' +
+          (stage.isHighestScoreStage ? '<span class="crown-pill">👑 ' + t('ui.highestScoreBadge') + '</span>' : '') +
+          '</div>' +
+          '<img class="card-hero-cutout" src="' + stage.heroSprite + '" alt="">';
+        card.appendChild(banner);
+      }
+
       var top = document.createElement('div');
       top.className = 'card-top';
       var img = document.createElement('img');
@@ -67,19 +80,11 @@
       var info = document.createElement('div');
       info.className = 'card-head-info';
       info.innerHTML = '<div class="card-period">' + t('stages.' + stage.id + '.period') + ' · ' + t('viewpoints.' + stage.viewpoint) + '</div>' +
-        '<h3>' + t('stages.' + stage.id + '.title') + '</h3>' +
-        '<span class="genre-badge">' + t('genres.' + stage.genreId) + '</span>';
+        '<h3>' + t('stages.' + stage.id + '.title') + '</h3>';
 
       top.appendChild(img);
       top.appendChild(info);
       card.appendChild(top);
-
-      if (stage.isHighestScoreStage) {
-        var crown = document.createElement('span');
-        crown.className = 'crown-pill';
-        crown.textContent = '👑 ' + t('ui.highestScoreBadge');
-        card.appendChild(crown);
-      }
 
       var desc = document.createElement('p');
       desc.className = 'card-desc';

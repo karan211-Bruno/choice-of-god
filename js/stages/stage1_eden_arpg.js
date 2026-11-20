@@ -8,10 +8,24 @@
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function drawStrokeText(ctx, text, x, y, fill, font) {
+    ctx.save();
+    ctx.font = font || '900 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#291709';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = fill || '#fde047';
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
   root.COG.STAGES.eden = {
     start: function (host, stageObj) {
       var W = host.WIDTH, H = host.HEIGHT;
       var S = root.COG.ChibiSprites;
+      var Sp = root.COG.Sprites;
       var uiT = function () { return host.pack().stageUi.eden; };
       var bonus = root.COG.State.getPowerBonus();
 
@@ -19,7 +33,7 @@
         x: 480, y: 390, r: 20, speed: 255, hp: 7 + Math.floor(bonus.hp / 25), maxHp: 7 + Math.floor(bonus.hp / 25),
         facingAngle: -Math.PI / 2, moving: false, attackTimer: 0, attackCd: 0, dashTimer: 0, dashCd: 0, dashVx: 0, dashVy: 0, invuln: 0
       };
-      var angelPos = { x: 440, y: 360 };
+      var angelPos = { x: 432, y: 356 };
       var time = 0;
       var talkedCherubim = false;
       var crossroadsDone = false;
@@ -32,16 +46,16 @@
         { x: 480, y: 115, got: false }
       ];
       var enemies = [
-        { x: 240, y: 190, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0 },
-        { x: 710, y: 200, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0 },
-        { x: 255, y: 355, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0 },
-        { x: 175, y: 270, hp: 155, maxHp: 155, spd: 68, isBoss: true, cd: 0 }
+        { x: 240, y: 190, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0, hitFlash: 0 },
+        { x: 710, y: 200, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0, hitFlash: 0 },
+        { x: 255, y: 355, hp: 36, maxHp: 36, spd: 56, isBoss: false, cd: 0, hitFlash: 0 },
+        { x: 175, y: 270, hp: 155, maxHp: 155, spd: 68, isBoss: true, cd: 0, hitFlash: 0 }
       ];
       var flowers = [];
-      for (var f = 0; f < 22; f++) {
+      for (var f = 0; f < 16; f++) {
         flowers.push({
-          x: 70 + ((f * 137) % 820),
-          y: 65 + ((f * 223) % 410),
+          x: 90 + ((f * 137) % 780),
+          y: 85 + ((f * 223) % 380),
           col: ['#ffffff', '#fbcfe8', '#fde047', '#bae6fd'][f % 4]
         });
       }
@@ -51,10 +65,19 @@
         { x: 460, y: 160, col: '#60a5fa' }
       ];
       var sparkles = [];
+      var burstParticles = [];
 
       var treeLife = { x: 480, y: 260 };
       var treeForb = { x: 115, y: 270 };
       var npcCherubim = { x: 825, y: 270 };
+
+      function spawnBurst(x, y, col, count) {
+        for (var i = 0; i < (count || 8); i++) {
+          var a = (i / (count || 8)) * Math.PI * 2 + Math.random() * 0.4;
+          var sp = 60 + Math.random() * 90;
+          burstParticles.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, col: col, life: 0.42, maxLife: 0.42 });
+        }
+      }
 
       function slashAttack() {
         if (hero.attackCd > 0) return;
@@ -65,12 +88,14 @@
         for (var i = enemies.length - 1; i >= 0; i--) {
           var en = enemies[i];
           var d = dist(hero.x, hero.y, en.x, en.y);
-          if (d <= 78) {
+          if (d <= 82) {
             en.hp -= dmg;
+            en.hitFlash = 0.14;
             var a = Math.atan2(en.y - hero.y, en.x - hero.x);
             en.x = Math.max(50, Math.min(W - 50, en.x + Math.cos(a) * 26));
             en.y = Math.max(50, Math.min(H - 50, en.y + Math.sin(a) * 26));
-            sparkles.push({ x: en.x, y: en.y, life: 0.35, text: '-' + dmg });
+            sparkles.push({ x: en.x, y: en.y - 24, life: 0.45, text: '-' + dmg, col: '#fde047' });
+            spawnBurst(en.x, en.y - 14, '#fef08a', 7);
 
             if (en.isBoss && en.hp > 0 && en.hp <= en.maxHp * 0.5 && !crossroadsDone) {
               triggerCrossroads();
@@ -78,6 +103,7 @@
             }
             if (en.hp <= 0) {
               var wasBoss = en.isBoss;
+              spawnBurst(en.x, en.y - 16, '#c084fc', 14);
               enemies.splice(i, 1);
               host.sfx('chime');
               if (wasBoss) {
@@ -154,6 +180,7 @@
           hero.dashVx = Math.cos(hero.facingAngle) * 520;
           hero.dashVy = Math.sin(hero.facingAngle) * 520;
           host.sfx('dash');
+          spawnBurst(hero.x, hero.y, '#bae6fd', 6);
         }
 
         if (hero.dashTimer > 0) {
@@ -177,30 +204,30 @@
         hero.x = Math.max(40, Math.min(W - 40, hero.x));
         hero.y = Math.max(45, Math.min(H - 40, hero.y));
 
-        angelPos.x += (hero.x - 42 - angelPos.x) * Math.min(1, dt * 5);
-        angelPos.y += (hero.y - 34 - angelPos.y) * Math.min(1, dt * 5);
+        angelPos.x += (hero.x - 46 - angelPos.x) * Math.min(1, dt * 5);
+        angelPos.y += (hero.y - 36 - angelPos.y) * Math.min(1, dt * 5);
 
         if (host.consumeAction()) {
           if (!tryInteract()) slashAttack();
         }
 
-        // Collect Creation Stars
         var gotStars = 0;
         stars.forEach(function (st) {
-          if (!st.got && dist(hero.x, hero.y, st.x, st.y) < 34) {
+          if (!st.got && dist(hero.x, hero.y, st.x, st.y) < 36) {
             st.got = true;
             host.sfx('chime');
-            sparkles.push({ x: st.x, y: st.y, life: 0.45, text: '+100' });
+            sparkles.push({ x: st.x, y: st.y - 10, life: 0.5, text: '+100', col: '#fde047' });
+            spawnBurst(st.x, st.y, '#fde047', 10);
             root.COG.State.addStat({ score: 100, faith: 1 });
           }
           if (st.got) gotStars++;
         });
 
-        // Update Cute Serpents
         var boss = null;
         enemies.forEach(function (en) {
           if (en.isBoss) boss = en;
           if (en.cd > 0) en.cd -= dt;
+          if (en.hitFlash > 0) en.hitFlash = Math.max(0, en.hitFlash - dt);
           var d = dist(hero.x, hero.y, en.x, en.y);
           if (d < 245 && d > 26) {
             var a = Math.atan2(hero.y - en.y, hero.x - en.x);
@@ -211,6 +238,7 @@
             hero.hp--;
             hero.invuln = 1.5;
             host.sfx('hit');
+            sparkles.push({ x: hero.x, y: hero.y - 30, life: 0.45, text: '-1 ♥', col: '#fb7185' });
             if (hero.hp <= 0) {
               host.sfx('fail');
               host.fail();
@@ -220,9 +248,14 @@
         });
 
         for (var si = sparkles.length - 1; si >= 0; si--) {
-          sparkles[si].y -= 28 * dt;
+          sparkles[si].y -= 32 * dt;
           sparkles[si].life -= dt;
           if (sparkles[si].life <= 0) sparkles.splice(si, 1);
+        }
+        for (var bi = burstParticles.length - 1; bi >= 0; bi--) {
+          var p = burstParticles[bi];
+          p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+          if (p.life <= 0) burstParticles.splice(bi, 1);
         }
 
         var t = uiT();
@@ -231,95 +264,100 @@
       });
 
       host.onRender(function (ctx) {
-        // Sunny Pastel Meadow
-        var bg = ctx.createLinearGradient(0, 0, 0, H);
-        bg.addColorStop(0, '#bef264');
-        bg.addColorStop(1, '#86efac');
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, W, H);
+        if (!Sp || !Sp.drawCover(ctx, 'bg_eden', W, H)) {
+          var bg = ctx.createLinearGradient(0, 0, 0, H);
+          bg.addColorStop(0, '#bef264');
+          bg.addColorStop(1, '#86efac');
+          ctx.fillStyle = bg;
+          ctx.fillRect(0, 0, W, H);
+        }
 
-        // Soft sunlit grass hills
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.beginPath(); ctx.ellipse(480, 260, 175, 110, 0, 0, Math.PI * 2); ctx.fill();
-
-        // Four Sparkling Pastel Rivers
-        ctx.strokeStyle = '#7dd3fc';
-        ctx.lineWidth = 28;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(treeLife.x, treeLife.y); ctx.quadraticCurveTo(320, 140, 80, 45);
-        ctx.moveTo(treeLife.x, treeLife.y); ctx.quadraticCurveTo(640, 140, 890, 50);
-        ctx.moveTo(treeLife.x, treeLife.y); ctx.quadraticCurveTo(310, 390, 90, 495);
-        ctx.moveTo(treeLife.x, treeLife.y); ctx.quadraticCurveTo(650, 390, 885, 495);
-        ctx.stroke();
-
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 6;
-        ctx.setLineDash([14, 16]);
-        ctx.lineDashOffset = -time * 28;
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Flowers & Butterflies
+        // Subtle sunlit Eden motes & wildflowers
         flowers.forEach(function (fl) { S.drawFlower(ctx, fl.x, fl.y, fl.col, time); });
         butterflies.forEach(function (bf, idx) {
           S.drawButterfly(ctx, bf.x + Math.sin(time + idx) * 28, bf.y + Math.cos(time * 1.4 + idx) * 18, bf.col, time);
         });
 
-        // Central Tree of Life (fluffy pastel emerald)
-        S.drawShadow(ctx, treeLife.x, treeLife.y + 38, 44, 14);
-        ctx.fillStyle = '#92400e'; ctx.strokeStyle = S.INK; ctx.lineWidth = 2.5;
-        S.roundRect(ctx, treeLife.x - 13, treeLife.y - 10, 26, 48, 8); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#34d399';
-        ctx.beginPath(); ctx.arc(treeLife.x, treeLife.y - 34, 42, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#6ee7b7';
-        ctx.beginPath(); ctx.arc(treeLife.x - 24, treeLife.y - 18, 25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.arc(treeLife.x + 24, treeLife.y - 18, 25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-
-        // Western Tree of Knowledge (pastel lavender & glowing apples)
-        S.drawShadow(ctx, treeForb.x, treeForb.y + 34, 38, 12);
-        ctx.fillStyle = '#78350f';
-        S.roundRect(ctx, treeForb.x - 10, treeForb.y - 8, 20, 42, 6); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#d8b4fe';
-        ctx.beginPath(); ctx.arc(treeForb.x, treeForb.y - 28, 34, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#fb7185';
-        [[-14, -22], [12, -32], [2, -16]].forEach(function (ap) {
-          ctx.beginPath(); ctx.arc(treeForb.x + ap[0], treeForb.y + ap[1], 6.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        });
-
-        // Creation Stars
         stars.forEach(function (st) {
           if (!st.got) S.drawStarGem(ctx, st.x, st.y, '#facc15', time);
         });
 
-        // Baby Cherubim NPC on right
-        S.drawCuteAngel(ctx, npcCherubim.x, npcCherubim.y, '#38bdf8', time, 1.05);
-        if (!talkedCherubim) {
-          ctx.fillStyle = '#fef08a'; ctx.strokeStyle = S.INK; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(npcCherubim.x, npcCherubim.y - 46 + Math.sin(time * 5) * 3, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = S.INK; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('!', npcCherubim.x, npcCherubim.y - 42 + Math.sin(time * 5) * 3);
-        }
-
-        // Enemies
-        enemies.forEach(function (en) {
-          S.drawCuteSerpent(ctx, en.x, en.y, time, en.isBoss ? 1.5 : 0.95, en.isBoss);
-          if (en.hp < en.maxHp) {
-            ctx.fillStyle = '#fff'; ctx.fillRect(en.x - 22, en.y - 38, 44, 6);
-            ctx.fillStyle = '#fb7185'; ctx.fillRect(en.x - 22, en.y - 38, 44 * (en.hp / en.maxHp), 6);
+        // Y-sorted isometric entities (trees, NPC, enemies, hero)
+        var drawQueue = [];
+        drawQueue.push({
+          y: treeLife.y + 34,
+          fn: function () {
+            S.drawLandmark(ctx, 'tree_life', treeLife.x, treeLife.y + 34, { height: 156, glow: 'rgba(134, 239, 172, 0.34)' }, time);
+          }
+        });
+        drawQueue.push({
+          y: treeForb.y + 32,
+          fn: function () {
+            S.drawLandmark(ctx, 'tree_forb', treeForb.x, treeForb.y + 32, { height: 140, glow: 'rgba(244, 114, 182, 0.32)' }, time);
+          }
+        });
+        drawQueue.push({
+          y: npcCherubim.y + 18,
+          fn: function () {
+            S.drawCuteAngel(ctx, npcCherubim.x, npcCherubim.y + 8, '#38bdf8', time, 1.0, { flipX: true });
+            if (!talkedCherubim) {
+              var bobY = npcCherubim.y - 68 + Math.sin(time * 5) * 4;
+              ctx.fillStyle = '#fef08a'; ctx.strokeStyle = S.INK; ctx.lineWidth = 2.4;
+              ctx.beginPath(); ctx.arc(npcCherubim.x, bobY, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+              ctx.fillStyle = '#9a3412'; ctx.font = '900 14px sans-serif'; ctx.textAlign = 'center';
+              ctx.fillText('!', npcCherubim.x, bobY + 5);
+            }
           }
         });
 
-        // Hero & Companion
-        S.drawChibiHero(ctx, hero.x, hero.y, hero, time);
-        var guide = root.COG.State.getActiveGuide();
-        S.drawCuteAngel(ctx, angelPos.x, angelPos.y, guide && guide.color, time, 0.72);
+        enemies.forEach(function (en) {
+          drawQueue.push({
+            y: en.y + 16,
+            fn: function () {
+              S.drawCuteSerpent(ctx, en.x, en.y + 16, time, en.isBoss ? 1.05 : 0.92, en.isBoss, {
+                flipX: hero.x > en.x,
+                hitFlash: en.hitFlash > 0
+              });
+              if (en.hp < en.maxHp) {
+                var barY = en.y - (en.isBoss ? 92 : 62);
+                if (Sp && Sp.drawGlossyBar) {
+                  Sp.drawGlossyBar(ctx, en.x - 24, barY, 48, 8, en.hp / en.maxHp, '#fb7185', '#1c1917');
+                }
+              }
+            }
+          });
+        });
 
-        // Popups & Hint
-        ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+        drawQueue.push({
+          y: hero.y + 18,
+          fn: function () {
+            S.drawChibiHero(ctx, hero.x, hero.y + 18, {
+              kind: 'adam_eve',
+              facingAngle: hero.facingAngle,
+              moving: hero.moving,
+              attackTimer: hero.attackTimer,
+              invuln: hero.invuln,
+              height: 92,
+              lv: root.COG.State.getPlayerLevel()
+            }, time);
+            S.drawCuteAngel(ctx, angelPos.x, angelPos.y + 6, '#38bdf8', time, 0.72);
+          }
+        });
+
+        drawQueue.sort(function (a, b) { return a.y - b.y; });
+        for (var q = 0; q < drawQueue.length; q++) drawQueue[q].fn();
+
+        // Sparkle & burst particles
+        burstParticles.forEach(function (p) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+          ctx.fillStyle = p.col;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 4.2, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        });
+
         sparkles.forEach(function (sp) {
-          ctx.fillStyle = '#b45309';
-          ctx.fillText(sp.text, sp.x, sp.y);
+          drawStrokeText(ctx, sp.text, sp.x, sp.y, sp.col || '#fde047', '900 16px sans-serif');
         });
       });
     }

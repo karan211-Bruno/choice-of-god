@@ -7,6 +7,7 @@
     start: function (host, stageObj) {
       var W = host.WIDTH, H = host.HEIGHT;
       var S = root.COG.ChibiSprites;
+      var Sp = root.COG.Sprites;
       var uiT = function () { return host.pack().stageUi.abraham; };
 
       var COLS = 7, ROWS = 5, HEX_R = 46;
@@ -18,7 +19,6 @@
         return { x: x, y: y };
       }
 
-      // Build 7x5 Canaan map
       var tiles = [];
       for (var r = 0; r < ROWS; r++) {
         tiles[r] = [];
@@ -112,12 +112,15 @@
       host.onUpdate(function (dt) { time += dt; });
 
       host.onRender(function (ctx) {
-        var sky = ctx.createLinearGradient(0, 0, 0, H);
-        sky.addColorStop(0, '#ddd6fe');
-        sky.addColorStop(1, '#fef3c7');
-        ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, W, H);
+        if (!Sp || !Sp.drawCover(ctx, 'bg_abraham', W, H)) {
+          var sky = ctx.createLinearGradient(0, 0, 0, H);
+          sky.addColorStop(0, '#ddd6fe');
+          sky.addColorStop(1, '#fef3c7');
+          ctx.fillStyle = sky;
+          ctx.fillRect(0, 0, W, H);
+        }
 
+        // Translucent 2.5D Hex Tiles over painted Canaan desert vista
         for (var r = 0; r < ROWS; r++) {
           for (var c = 0; c < COLS; c++) {
             var t = tiles[r][c];
@@ -125,7 +128,6 @@
             var adj = isNeighbor(heroHex.c, heroHex.r, c, r);
             var isCur = heroHex.c === c && heroHex.r === r;
 
-            // Draw Hexagon
             ctx.beginPath();
             for (var i = 0; i < 6; i++) {
               var a = (Math.PI / 3) * i - Math.PI / 6;
@@ -135,34 +137,51 @@
             }
             ctx.closePath();
 
-            var fill = '#fde68a';
-            if (t.type === 'shrine') fill = t.cleared ? '#bbf7d0' : '#bae6fd';
-            else if (t.type === 'lot') fill = '#fed7aa';
-            else if (t.type === 'raider') fill = t.cleared ? '#fde68a' : '#fecdd3';
-            else if (t.type === 'moriah') fill = '#fef08a';
+            var fill = 'rgba(255, 250, 232, 0.36)';
+            if (t.type === 'shrine') fill = t.cleared ? 'rgba(134, 239, 172, 0.45)' : 'rgba(125, 211, 252, 0.48)';
+            else if (t.type === 'lot') fill = 'rgba(254, 215, 170, 0.5)';
+            else if (t.type === 'raider') fill = t.cleared ? 'rgba(255, 250, 232, 0.34)' : 'rgba(253, 164, 175, 0.52)';
+            else if (t.type === 'moriah') fill = 'rgba(254, 240, 138, 0.58)';
 
             ctx.fillStyle = fill;
             ctx.fill();
-            ctx.strokeStyle = adj ? '#2563eb' : (isCur ? '#ea580c' : S.INK);
-            ctx.lineWidth = adj ? 3.5 : 2;
+            ctx.strokeStyle = adj ? '#38bdf8' : (isCur ? '#f59e0b' : 'rgba(74, 50, 40, 0.45)');
+            ctx.lineWidth = adj ? 3.5 : (isCur ? 3.5 : 1.8);
             ctx.stroke();
+
+            if (adj) {
+              ctx.save();
+              ctx.globalAlpha = 0.45 + Math.sin(time * 6) * 0.25;
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+              ctx.restore();
+            }
 
             if (t.type === 'shrine') {
               S.drawStarGem(ctx, p.x, p.y, t.cleared ? '#22c55e' : '#38bdf8', time);
             } else if (t.type === 'lot' && !t.cleared) {
-              S.drawCuteAnimal(ctx, p.x, p.y, 'sheep', time, 0.85);
+              S.drawCuteAnimal(ctx, p.x, p.y + 10, 'sheep', time, 0.88);
             } else if (t.type === 'raider' && !t.cleared) {
-              S.drawCutePharaohOrGuard(ctx, p.x, p.y + 4, false, time, 0.72);
+              S.drawCutePharaohOrGuard(ctx, p.x, p.y + 14, false, time, 0.78);
             } else if (t.type === 'moriah') {
-              ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = S.INK; ctx.lineWidth = 2;
-              ctx.beginPath(); ctx.moveTo(p.x - 22, p.y + 18); ctx.lineTo(p.x, p.y - 20); ctx.lineTo(p.x + 22, p.y + 18); ctx.closePath(); ctx.fill(); ctx.stroke();
-              S.drawStarGem(ctx, p.x, p.y - 22, '#facc15', time);
+              S.drawBuilding(ctx, 'tabernacle', p.x, p.y + 14, {
+                height: 76,
+                anchorY: 0.78,
+                glowColor: 'rgba(250, 204, 21, 0.42)'
+              }, time);
+              S.drawStarGem(ctx, p.x, p.y - 26, '#facc15', time);
             }
           }
         }
 
         var hp = hexCenter(heroHex.c, heroHex.r);
-        S.drawChibiHero(ctx, hp.x, hp.y - 4, { kind: 'abraham', moving: false }, time);
+        S.drawChibiHero(ctx, hp.x, hp.y + 12, {
+          kind: 'abraham',
+          moving: false,
+          height: 86,
+          lv: root.COG.State.getPlayerLevel()
+        }, time);
       });
     }
   };

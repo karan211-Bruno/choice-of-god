@@ -7,6 +7,7 @@
     start: function (host, stageObj) {
       var W = host.WIDTH, H = host.HEIGHT;
       var S = root.COG.ChibiSprites;
+      var Sp = root.COG.Sprites;
       var uiT = function () { return host.pack().stageUi.sinai; };
 
       var aim = { x: W / 2, y: H / 2 };
@@ -14,27 +15,38 @@
       var shadowsPurified = 0;
       var timeLeft = 45;
       var time = 0;
+      var recoil = 0;
       var calfChoiceDone = false;
 
       var targets = [];
       var bolts = [];
+      var bursts = [];
       var spawnCd = 0.6;
 
       host.onPointer('pointermove', function (x, y) { aim.x = x; aim.y = y; });
       host.onPointer('pointerdown', function (x, y) { aim.x = x; aim.y = y; fireBolt(); });
 
+      function spawnBurst(x, y, col) {
+        for (var i = 0; i < 10; i++) {
+          var a = (i / 10) * Math.PI * 2 + Math.random() * 0.3;
+          var sp = 60 + Math.random() * 90;
+          bursts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, col: col, life: 0.42 });
+        }
+      }
+
       function fireBolt() {
         host.sfx('magic');
+        recoil = 1;
         var sx = W - 180, sy = H - 70;
         var a = Math.atan2(aim.y - sy, aim.x - sx);
-        bolts.push({ x: sx, y: sy, vx: Math.cos(a) * 680, vy: Math.sin(a) * 680, life: 1.4 });
+        bolts.push({ x: sx, y: sy, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700, life: 1.4 });
       }
 
       host.onUpdate(function (dt, keys) {
         time += dt;
         timeLeft -= dt;
+        if (recoil > 0) recoil = Math.max(0, recoil - dt * 5.5);
 
-        // Keyboard aiming support
         if (keys.left) aim.x -= 320 * dt;
         if (keys.right) aim.x += 320 * dt;
         if (keys.up) aim.y -= 320 * dt;
@@ -72,12 +84,14 @@
           b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
           var hit = false;
           for (var j = targets.length - 1; j >= 0; j--) {
-            if (Math.hypot(b.x - targets[j].x, b.y - targets[j].y) < 34) {
+            if (Math.hypot(b.x - targets[j].x, b.y - targets[j].y) < 38) {
               if (targets[j].kind === 'manna') {
                 mannaGot = Math.min(8, mannaGot + 1);
+                spawnBurst(targets[j].x, targets[j].y, '#fef08a');
                 host.sfx('chime');
               } else {
                 shadowsPurified = Math.min(8, shadowsPurified + 1);
+                spawnBurst(targets[j].x, targets[j].y, '#c084fc');
                 host.sfx('slash');
                 if (shadowsPurified === 4 && !calfChoiceDone) {
                   calfChoiceDone = true;
@@ -92,6 +106,12 @@
             }
           }
           if (hit || b.life <= 0) bolts.splice(bi, 1);
+        }
+
+        for (var pi = bursts.length - 1; pi >= 0; pi--) {
+          var pt = bursts[pi];
+          pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.life -= dt;
+          if (pt.life <= 0) bursts.splice(pi, 1);
         }
 
         var t = uiT();
@@ -112,62 +132,78 @@
       });
 
       host.onRender(function (ctx) {
-        // First-Person View of Sunlit Mount Sinai & Golden Tabernacle!
-        var sky = ctx.createLinearGradient(0, 0, 0, H);
-        sky.addColorStop(0, '#bae6fd');
-        sky.addColorStop(0.55, '#fef3c7');
-        sky.addColorStop(1, '#fed7aa');
-        ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, W, H);
+        if (!Sp || !Sp.drawCover(ctx, 'bg_sinai', W, H)) {
+          var sky = ctx.createLinearGradient(0, 0, 0, H);
+          sky.addColorStop(0, '#bae6fd');
+          sky.addColorStop(1, '#fed7aa');
+          ctx.fillStyle = sky;
+          ctx.fillRect(0, 0, W, H);
+        }
 
-        // Mount Sinai Peaks
-        ctx.fillStyle = '#d97706'; ctx.strokeStyle = S.INK; ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.moveTo(0, 390); ctx.lineTo(240, 145); ctx.lineTo(480, 340); ctx.lineTo(740, 130); ctx.lineTo(W, 380); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
-        ctx.fill(); ctx.stroke();
-
-        // Tabernacle Horizon Center
-        ctx.fillStyle = '#fffbeb';
-        S.roundRect(ctx, 410, 330, 140, 68, 8); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#facc15';
-        ctx.beginPath(); ctx.moveTo(400, 330); ctx.lineTo(480, 290); ctx.lineTo(560, 330); ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Majestic Golden Tabernacle Sanctuary landmark on Mount Sinai plateau
+        S.drawBuilding(ctx, 'tabernacle', 480, 415, {
+          height: 138,
+          anchorY: 0.85,
+          glowColor: 'rgba(250, 204, 21, 0.45)',
+          glowRadius: 90
+        }, time);
 
         // Targets (Manna stars & Shadow wisps)
         targets.forEach(function (tg) {
           if (tg.kind === 'manna') {
             S.drawStarGem(ctx, tg.x, tg.y, '#fef08a', time);
           } else {
-            S.drawCuteSerpent(ctx, tg.x, tg.y, time, 1.0, false);
+            S.drawCuteSerpent(ctx, tg.x, tg.y + 24, time, 0.9, false, { flipX: tg.vx > 0 });
           }
         });
 
-        // Light Bolts
+        // Light Bolts with luminous aura
         bolts.forEach(function (b) {
-          ctx.fillStyle = '#fde047';
-          ctx.beginPath(); ctx.arc(b.x, b.y, 11, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+          ctx.save();
+          ctx.fillStyle = 'rgba(253, 224, 71, 0.4)';
+          ctx.beginPath(); ctx.arc(b.x, b.y, 18, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath(); ctx.arc(b.x, b.y, 10, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
+          ctx.restore();
         });
 
-        // First-Person Golden Shepherd Staff tracking crosshair (bottom-right!)
+        // Spark bursts
+        bursts.forEach(function (pt) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, pt.life / 0.42);
+          ctx.fillStyle = pt.col;
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        });
+
+        // First-Person Golden Shepherd Staff with recoil
         var sx = W - 150, sy = H + 20;
         var ang = Math.atan2(aim.y - sy, aim.x - sx);
         ctx.save();
         ctx.translate(sx, sy);
         ctx.rotate(ang);
+        ctx.translate(-recoil * 18, 0);
         ctx.fillStyle = '#b45309'; ctx.strokeStyle = S.INK; ctx.lineWidth = 3;
         S.roundRect(ctx, 0, -9, 175, 18, 8); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(253, 224, 71, 0.4)';
+        ctx.beginPath(); ctx.arc(178, 0, 28, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#fde047';
         ctx.beginPath(); ctx.arc(178, 0, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.restore();
 
-        // Aim Crosshair
-        ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.arc(aim.x, aim.y, 20, 0, Math.PI * 2); ctx.stroke();
+        // Crisp Aim Crosshair
+        ctx.save();
+        ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(aim.x, aim.y, 22, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#fde047'; ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.moveTo(aim.x - 28, aim.y); ctx.lineTo(aim.x - 10, aim.y);
-        ctx.moveTo(aim.x + 10, aim.y); ctx.lineTo(aim.x + 28, aim.y);
-        ctx.moveTo(aim.x, aim.y - 28); ctx.lineTo(aim.x, aim.y - 10);
-        ctx.moveTo(aim.x, aim.y + 10); ctx.lineTo(aim.x, aim.y + 28);
+        ctx.moveTo(aim.x - 30, aim.y); ctx.lineTo(aim.x - 10, aim.y);
+        ctx.moveTo(aim.x + 10, aim.y); ctx.lineTo(aim.x + 30, aim.y);
+        ctx.moveTo(aim.x, aim.y - 30); ctx.lineTo(aim.x, aim.y - 10);
+        ctx.moveTo(aim.x, aim.y + 10); ctx.lineTo(aim.x, aim.y + 30);
         ctx.stroke();
+        ctx.restore();
       });
     }
   };
