@@ -44,7 +44,8 @@
     unit_miriam_sheet: './assets/sprites/sheets/unit_miriam_sheet.png',
     boss_serpent_sheet: './assets/sprites/sheets/boss_serpent_sheet.png',
     boss_pharaoh_sheet: './assets/sprites/sheets/boss_pharaoh_sheet.png',
-    enemy_magician_sheet: './assets/sprites/sheets/enemy_magician_sheet.png'
+    enemy_magician_sheet: './assets/sprites/sheets/enemy_magician_sheet.png',
+    world_map: './assets/bg/world_map.jpg'
   };
 
   var cache = {};

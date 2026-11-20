@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#fef7e5">
-  <title>Choice of God v5.1 (신의 선택) — 애니메이션 멀티 장르 성경 RPG</title>
+  <title>Choice of God v6.0 (신의 선택) — 성경 월드맵 · 멀티 장르 RPG</title>
   <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./css/styles.css">
@@ -86,9 +86,9 @@
   </header>
 
   <main id="main-content" tabindex="-1">
-    <!-- View 1: Cute Storybook Stage Gallery (6 Characters & 6 Genres!) -->
-    <section id="view-gallery" class="gallery-view">
-      <div class="storybook-hero">
+    <!-- View 1: Interactive Biblical World Map & First-Screen Stage Briefing -->
+    <section id="view-gallery" class="gallery-view" aria-labelledby="gallery-heading">
+      <div class="storybook-hero world-hub-banner">
         <div class="hero-portraits" aria-hidden="true">
           <img src="./assets/art/adam_eve.png" alt="">
           <img src="./assets/art/noah.png" alt="">
@@ -96,13 +96,71 @@
           <img src="./assets/art/moses.png" alt="">
         </div>
         <div class="hero-copy">
-          <h2 id="gallery-heading" data-i18n="ui.galleryTitle">시점 · 스테이지 자유 선택</h2>
+          <h2 id="gallery-heading" data-i18n="ui.galleryTitle">성경 월드맵 탐험 (지역 선택 = 장르 변신!)</h2>
           <p class="hero-tagline" data-i18n="appTagline"></p>
           <p class="hero-hint" data-i18n="ui.galleryHint"></p>
         </div>
       </div>
 
-      <div id="stage-gallery-grid" class="stage-gallery-grid"></div>
+      <div class="world-hub-layout">
+        <div class="world-map-stage">
+          <div id="world-map-board" class="world-map-board">
+            <img class="world-map-img" src="./assets/bg/world_map.jpg" alt="Biblical World Map">
+            <svg id="world-map-trail" class="world-map-trail" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <div id="world-map-pins" class="world-map-pins" role="group" aria-labelledby="gallery-heading"></div>
+          </div>
+          <p id="map-hint-bar" class="world-map-hint" data-i18n="ui.mapHint"></p>
+        </div>
+
+        <section id="stage-briefing-panel" class="stage-briefing-panel" aria-labelledby="brief-title">
+          <div class="brief-banner">
+            <img id="brief-bg" class="card-scene-bg" src="./assets/bg/bg_eden.jpg" alt="">
+            <div class="card-banner-scrim"></div>
+            <div class="card-banner-badges">
+              <span id="brief-chapter-badge" class="chapter-pill">STAGE 1 / 6</span>
+              <span id="brief-genre" class="genre-badge"></span>
+              <span id="brief-crown" class="crown-pill" hidden>👑 <span data-i18n="ui.highestScoreBadge"></span></span>
+            </div>
+            <img id="brief-hero-sprite" class="card-hero-cutout brief-hero-cutout" src="./assets/sprites/hero_adam.png" alt="">
+          </div>
+
+          <div class="brief-header">
+            <img id="brief-portrait" class="card-portrait" src="./assets/art/adam_eve.png" alt="">
+            <div class="card-head-info">
+              <div id="brief-period" class="card-period"></div>
+              <h3 id="brief-title"></h3>
+              <div class="brief-score-row">
+                <span id="brief-stars" class="card-stars">☆☆☆</span>
+                <span id="brief-best-score" class="brief-best-pill"></span>
+              </div>
+            </div>
+          </div>
+
+          <p id="brief-desc" class="brief-desc"></p>
+
+          <div class="brief-info-cards">
+            <div class="brief-box">
+              <strong data-i18n="ui.briefObjective"></strong>
+              <p id="brief-objective"></p>
+            </div>
+            <div class="brief-box">
+              <strong data-i18n="ui.briefControls"></strong>
+              <p id="brief-controls"></p>
+            </div>
+            <div class="brief-verse-box">
+              <strong data-i18n="ui.briefVerse"></strong>
+              <blockquote id="brief-verse-text"></blockquote>
+              <cite id="brief-verse-ref"></cite>
+            </div>
+          </div>
+
+          <div class="brief-actions">
+            <button id="btn-prev-stage" type="button" class="btn-pill" data-i18n="ui.prevStage"></button>
+            <button id="btn-launch-selected" type="button" class="btn-sunny brief-launch-btn"></button>
+            <button id="btn-next-stage-hub" type="button" class="btn-pill" data-i18n="ui.nextStage"></button>
+          </div>
+        </section>
+      </div>
     </section>
 
     <!-- View 2: Active Multi-Genre Stage -->
@@ -165,7 +223,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>Choice of God v5.1 · Click-to-Move &amp; 4-Frame Animated Multi-Genre RPG · <span data-i18n="ui.controlsHint"></span></p>
+    <p>Choice of God v6.0 · Interactive Biblical World Map &amp; Multi-Genre RPG · <span data-i18n="ui.controlsHint"></span></p>
   </footer>
 
   <!-- Native Accessible Dialogs -->

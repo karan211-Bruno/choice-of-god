@@ -1,7 +1,7 @@
 {
-  "name": "Choice of God - 신의 선택 (v5.1 Animated Action RPG)",
+  "name": "Choice of God - 신의 선택 (v6.0 World Map RPG)",
   "short_name": "Choice of God",
-  "description": "Genesis & Exodus Click-to-Move & 4-Frame Animated Multi-Genre RPG Adventure (5 Languages)",
+  "description": "Interactive Biblical World Map & First-Screen Stage Briefing Multi-Genre RPG Adventure (5 Languages)",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

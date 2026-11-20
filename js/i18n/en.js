@@ -10,10 +10,17 @@
     appTitle: 'Choice of God',
     appSubtitle: 'Cute Storybook Multi-Genre RPG Adventure (Genesis & Exodus)',
     appTagline: 'A sparkling Bible picture-book adventure where every stage transforms into a brand-new genre!',
-    metaTitle: 'Choice of God v5.1 — Animated SD Multi-Genre Bible RPG',
+    metaTitle: 'Choice of God v6.0 — Biblical World Map & Multi-Genre RPG',
     ui: {
-      galleryTitle: 'Choose Your Story & Genre Freely',
-      galleryHint: 'Pick any hero and biblical stage in any order! Guarding Eden through Stage 1 awards the highest +5,000 Crown Bonus.',
+      galleryTitle: 'Biblical World Map · Choose Any Stage & Genre',
+      galleryHint: 'Click any landmark pin on the map to preview its story, mission & controls right on the start screen! (Guarding Eden in Stage 1 grants +5,000 bonus)',
+      mapHint: 'Click any landmark pin on the World Map to read the briefing, then hit Start! (Double-click a pin to jump right in)',
+      briefObjective: '🎯 Mission Objective',
+      briefControls: '🎮 Controls',
+      briefVerse: '📖 Key Verse',
+      prevStage: '◀ Prev',
+      bestScore: 'Best Score',
+      unplayed: 'Not Cleared',
       highestScoreBadge: 'Highest Score Route (+5,000)',
       score: 'Score',
       level: 'Lv',
@@ -78,46 +85,58 @@
     books: { genesis: 'Genesis', exodus: 'Exodus', daniel: 'Daniel' },
     stages: {
       eden: {
+        mapLabel: '1. Eden',
         title: 'Stage 1. Garden of Eden — Sunny Action RPG',
         period: 'Genesis 1–3',
         objective: 'Gather 5 Creation Stars, speak with baby Cherubim, and purify the Serpent (or choose at the Tree of Knowledge)!',
         desc: 'Dash and slash across a sunlit meadow with four sparkling rivers as adorable chibi Adam & Eve.',
+        controls: 'Click-to-Move / Auto-Action · WASD · Space 3-Hit Combo · Q/R Skills · Shift Dash',
         outroPreserved: 'Holding fast to God’s Word, Eden blossoms forever as Paradise! (+5,000 Crown Bonus)',
         outroFallen: 'Clothed in God’s warm Garment of Skin, humanity steps forward into the story of redemption!'
       },
       ark: {
+        mapLabel: '2. Noah’s Ark',
         title: 'Stage 2. Noah’s Ark — Cozy Village Builder',
         period: 'Genesis 6–9',
         objective: 'Build Timber Mills, Pitch Wells & Animal Shelters on meadow tiles, welcome baby animals, and reach 100% Ark!',
         desc: 'Construct timber workshops on a 6x4 sunny grid, harvest resources, and guide baby animals aboard the Ark.',
+        controls: 'Click grass plots to move, hammer & upgrade workshops · Build Ark at 100%',
         outro: 'All baby animals are safely aboard and a bright pastel rainbow shines over the valley!'
       },
       abraham: {
+        mapLabel: '3. Canaan',
         title: 'Stage 3. Abraham — Hex Strategy Expedition',
         period: 'Genesis 12–22',
         objective: 'March turn-by-turn across Canaan’s hex tiles, light 3 Star Shrines, and reach Mount Moriah!',
         desc: 'Command Abraham’s caravan across pastel hexes with diplomacy choices, star shrines, and tactical clashes.',
+        controls: 'Click any hex tile to march along the shortest path · Cast Starlight / Peace skills',
         outro: 'Faith shining brighter than the stars guides you safely to Mount Moriah — Jehovah-Jireh!'
       },
       plagues: {
+        mapLabel: '4. Egypt Plagues',
         title: 'Stage 4. Moses & Ten Plagues — JRPG Battle',
         period: 'Exodus 3–12',
         objective: 'Lead Moses & Aaron in turn-based JRPG combat using iconic Miracle Skills to overcome Pharaoh’s court!',
         desc: 'Side-view turn-based RPG duel featuring Nile Waves, Bouncing Frogs, Sky Hail, Goshen Shield & Passover Seal.',
+        controls: 'Choose 5 Miracle Skills by turn (raise Goshen Shield when Pharaoh charges)',
         outro: 'Goshen glows beneath the golden shield and the dawn of the Exodus opens!'
       },
       redsea: {
+        mapLabel: '5. Red Sea',
         title: 'Stage 5. Crossing the Red Sea — 3-Lane RTS',
         period: 'Exodus 13–15',
         objective: 'Spend regenerating Faith Mana to summon Angels, Knights & Miriam across 3 lanes and unleash the Staff Wave!',
         desc: 'Real-time 3-lane defense between fish-filled turquoise water walls against oncoming chariots!',
+        controls: 'Select Lane 1–3 · Summon Angel, Knight & Miriam · Unleash Staff Wave',
         outro: 'Every traveler reaches the sunny eastern shore as Miriam’s victory song fills the sky!'
       },
       sinai: {
+        mapLabel: '6. Mt. Sinai',
         title: 'Stage 6. Mount Sinai — 1st-Person Light Aim & Finale',
         period: 'Exodus 16–40',
         objective: 'Aim Moses’s glowing staff to catch 8 Manna stars and purify 8 Golden Calf shadow wisps!',
         desc: 'First-person light-staff aiming action over Mount Sinai, crowning the golden Tabernacle.',
+        controls: 'Move mouse/touch to aim · Click/Space to fire light orbs · Shift Glory Beam',
         outro: 'The cloud of glory fills the golden Tabernacle, completing the Genesis & Exodus chronicle!'
       }
     },

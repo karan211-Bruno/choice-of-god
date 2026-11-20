@@ -1,4 +1,4 @@
-const CACHE_NAME = 'choice-of-god-v5.1.0';
+const CACHE_NAME = 'choice-of-god-v6.0.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const CORE_ASSETS = [
   './assets/art/moses.png',
   './assets/art/cherubim.png',
   './assets/art/serpent.png',
+  './assets/bg/world_map.jpg',
   './assets/bg/bg_eden.jpg',
   './assets/bg/bg_ark.jpg',
   './assets/bg/bg_abraham.jpg',

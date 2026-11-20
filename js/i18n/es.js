@@ -10,10 +10,17 @@
     appTitle: 'Choice of God · Elección de Dios',
     appSubtitle: 'Aventura RPG Multigénero Ilustrada (Génesis y Éxodo)',
     appTagline: '¡Un cuento ilustrado bíblico donde cada etapa cambia completamente de género de juego!',
-    metaTitle: 'Choice of God v5.1 — RPG Animado Multigénero',
+    metaTitle: 'Choice of God v6.0 — Mapa Mundial Bíblico y RPG Multigénero',
     ui: {
-      galleryTitle: 'Elige Libremente Tu Historia y Género',
-      galleryHint: '¡Escoge cualquier héroe y etapa en el orden que prefieras! Proteger el Edén en la Etapa 1 otorga +5,000 puntos.',
+      galleryTitle: 'Mapa Mundial Bíblico · Elige Región y Género',
+      galleryHint: '¡Haz clic en cualquier pin del mapa para ver su historia, misión y controles en esta pantalla! (Proteger el Edén en la Etapa 1 da +5,000 pts)',
+      mapHint: 'Haz clic en un pin del Mapa Mundial para leer su resumen y luego pulsa Jugar (Doble clic para iniciar al instante).',
+      briefObjective: '🎯 Objetivo de Misión',
+      briefControls: '🎮 Controles',
+      briefVerse: '📖 Versículo Clave',
+      prevStage: '◀ Anterior',
+      bestScore: 'Mejor Puntuación',
+      unplayed: 'Sin Completar',
       highestScoreBadge: 'Ruta Máxima (+5,000)',
       score: 'Puntos',
       level: 'Nv',
@@ -78,46 +85,58 @@
     books: { genesis: 'Génesis', exodus: 'Éxodo', daniel: 'Daniel' },
     stages: {
       eden: {
+        mapLabel: '1. Jardín del Edén',
         title: 'Etapa 1. Jardín del Edén — Action RPG',
         period: 'Génesis 1–3',
         objective: '¡Reúne 5 Estrellas de Creación, habla con el Querubín y purifica a la Serpiente o decide en el Árbol!',
         desc: 'Corre y esquiva por el prado soleado como Adán y Eva chibi con espada de luz.',
+        controls: 'Clic para mover / Auto-Acción · WASD · Espacio combo · Q/R Skills · Shift esquivar',
         outroPreserved: '¡Guardaste la Palabra y el Edén brilla como Paraíso eterno! (+5,000 Bono Corona)',
         outroFallen: '¡Vestidos con la cálida Túnica de Pieles, comienza la historia de redención!'
       },
       ark: {
+        mapLabel: '2. Arca de Noé',
         title: 'Etapa 2. Arca de Noé — Aldea Constructora',
         period: 'Génesis 6–9',
         objective: '¡Construye aserraderos, pozos de brea y refugios animales en la pradera para completar el Arca al 100%!',
         desc: 'Construye talleres en una cuadrícula 6x4, cosecha recursos y recibe crías de animales adorables.',
+        controls: 'Clic en casillas de pradera para correr, martillar y mejorar · Botón Construir Arca',
         outro: '¡Todos los animalitos subieron a salvo y un arcoíris pastel iluminó el valle!'
       },
       abraham: {
+        mapLabel: '3. Canaán',
         title: 'Etapa 3. Abraham — Estrategia Hexagonal',
         period: 'Génesis 12–22',
         objective: '¡Avanza turno a turno por hexágonos, enciende 3 Altares de Estrellas y alcanza el Monte Moriah!',
         desc: 'Dirige a Abraham en un mapa hexagonal con diplomacia junto a Lot y duelos tácticos.',
+        controls: 'Clic en cualquier hexágono para marchar por la ruta óptima · Habilidades Paz/Estrella',
         outro: '¡Una fe más brillante que las estrellas te llevó hasta Jehová-Jireh en Moriah!'
       },
       plagues: {
+        mapLabel: '4. Plagas de Egipto',
         title: 'Etapa 4. Moisés y Plagas — Batalla JRPG',
         period: 'Éxodo 3–12',
         objective: '¡Lidera a Moisés y Aarón en combate por turnos usando habilidades milagrosas contra Faraón!',
         desc: 'Combate clásico lateral con Olas del Nilo, Ranas Saltarinas, Granizo, Escudo y Pascua.',
+        controls: 'Elige 5 Habilidades Milagrosas por turno (usa Escudo de Gosén ante cargas enemigas)',
         outro: '¡Gosén brilló bajo el escudo dorado y amaneció la libertad de Israel!'
       },
       redsea: {
+        mapLabel: '5. Mar Rojo',
         title: 'Etapa 5. Mar Rojo — Defensa RTS 3 Carriles',
         period: 'Éxodo 13–15',
         objective: '¡Usa Maná de Fe para invocar Ángeles, Caballeros y a María en 3 carriles y lanza la Ola de la Vara!',
         desc: 'Estrategia en tiempo real entre muros de agua con pececitos frente a los carros egipcios.',
+        controls: 'Elige carril 1–3 · Invoca Ángel, Caballero y María · Lanza Ola de la Vara',
         outro: '¡Todo el pueblo cruzó en seco mientras el canto de María llenaba el cielo!'
       },
       sinai: {
+        mapLabel: '6. Monte Sinaí',
         title: 'Etapa 6. Monte Sinaí — Luz en 1.ª Persona',
         period: 'Éxodo 16–40',
         objective: '¡Apunta la vara brillante para recoger 8 Manás, purificar 8 sombras e iluminar el Tabernáculo!',
         desc: 'Acción de puntería en primera persona sobre el Monte Sinaí culminando el Tabernáculo dorado.',
+        controls: 'Mueve ratón/dedo para apuntar · Clic/Espacio orbes de luz · Shift Rayo de Gloria',
         outro: '¡La gloria llenó el Tabernáculo dorado completando el cuento de Génesis y Éxodo!'
       }
     },

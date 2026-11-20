@@ -44,7 +44,7 @@ for (const rel of requiredPngs) {
 
 const Sprites = require(path.join(ROOT, 'js', 'engine', 'spriteLoader.js'));
 const manifestKeys = Object.keys(Sprites.MANIFEST);
-assert.strictEqual(manifestKeys.length, 38, `Expected 38 v5.0 assets in MANIFEST, got ${manifestKeys.length}`);
+assert.strictEqual(manifestKeys.length, 39, `Expected 39 v6.0 assets in MANIFEST, got ${manifestKeys.length}`);
 let bgCount = 0;
 let rgbaSpriteCount = 0;
 let sheetCount = 0;
@@ -75,7 +75,7 @@ for (const key of manifestKeys) {
     assert.fail(`Unexpected asset extension in MANIFEST: ${rel}`);
   }
 }
-assert.strictEqual(bgCount, 6, 'Expected 6 painted stage backgrounds');
+assert.strictEqual(bgCount, 7, 'Expected 7 painted JPEG backgrounds (world_map + 6 stage backgrounds)');
 assert.strictEqual(rgbaSpriteCount, 21, 'Expected 21 transparent RGBA cutout sprites');
 assert.strictEqual(sheetCount, 11, 'Expected 11 4-frame 880x220 RGBA animation sprite sheets');
 console.log(`   OK (${requiredPngs.length} portraits/icons + ${bgCount} JPG bgs + ${rgbaSpriteCount} RGBA PNG sprites + ${sheetCount} 4-frame strips verified)`);
@@ -137,10 +137,17 @@ for (const stg of STAGES) {
   assert(fs.existsSync(path.join(ROOT, stg.portrait)), `Missing portrait ${stg.portrait}`);
   assert(fs.existsSync(path.join(ROOT, stg.bg)), `Missing stage bg ${stg.bg}`);
   assert(fs.existsSync(path.join(ROOT, stg.heroSprite)), `Missing hero sprite ${stg.heroSprite}`);
+  assert(stg.mapPos && typeof stg.mapPos.x === 'number' && typeof stg.mapPos.y === 'number', `Missing mapPos on ${stg.id}`);
+  assert(stg.mapPos.x > 0 && stg.mapPos.x < 100 && stg.mapPos.y > 0 && stg.mapPos.y < 100, `Out-of-bounds mapPos on ${stg.id}`);
   for (const sid of stg.scriptureIds) {
     assert(bibleSet.has(sid), `Stage ${stg.id} unknown scripture ${sid}`);
   }
 }
+const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+assert(indexHtml.includes('assets/bg/world_map.jpg'), 'index.html missing world_map.jpg');
+assert(indexHtml.includes('id="world-map-pins"'), 'index.html missing #world-map-pins');
+assert(indexHtml.includes('id="stage-briefing-panel"'), 'index.html missing #stage-briefing-panel');
+assert(indexHtml.includes('id="btn-launch-selected"'), 'index.html missing #btn-launch-selected');
 for (const dKey of Object.keys(DIALOGUES)) {
   const dlg = DIALOGUES[dKey];
   assert(fs.existsSync(path.join(ROOT, dlg.portrait)), `Missing dialogue portrait ${dlg.portrait}`);
@@ -173,4 +180,4 @@ assert(State.getPlayerLevel() >= 6, `Expected Lv >= 6, got ${State.getPlayerLeve
 assert.strictEqual(State.getUnlockedGuides().length, 5, 'Expected all 5 cute companions unlocked');
 
 console.log('   OK (All state & progression checks passed)');
-console.log('ALL v5.1 CLICK-TO-MOVE & 4-FRAME ANIMATION CHECKS PASSED!');
+console.log('ALL v6.0 WORLD MAP & FIRST-SCREEN BRIEFING CHECKS PASSED!');

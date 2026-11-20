@@ -4,7 +4,13 @@
   function el(id) { return document.getElementById(id); }
 
   var activeStage = null;
+  var selectedStageId = 'eden';
   var touchEnabled = false;
+
+  function getSelectedStage() {
+    var list = root.COG.DATA.STAGES || [];
+    return list.find(function (s) { return s.id === selectedStageId; }) || list[0];
+  }
 
   function findNextStage(stageObj) {
     var list = root.COG.DATA.STAGES || [];
@@ -43,74 +49,149 @@
     if (sel && sel.value !== root.COG.i18n.getLang()) sel.value = root.COG.i18n.getLang();
   }
 
-  function renderGallery() {
+  function renderWorldMap() {
     var t = function (k) { return root.COG.i18n.t(k); };
     var st = root.COG.State.get();
-    var grid = el('stage-gallery-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
+    var stages = root.COG.DATA.STAGES || [];
+    var selected = getSelectedStage();
+    if (!selected) return;
+    selectedStageId = selected.id;
 
-    (root.COG.DATA.STAGES || []).forEach(function (stage) {
+    var trail = el('world-map-trail');
+    if (trail && stages.length >= 6) {
+      var pts = stages.map(function (s) { return s.mapPos || { x: 50, y: 50 }; });
+      var pathD = 'M ' + pts[0].x + ' ' + pts[0].y +
+        ' Q ' + ((pts[0].x + pts[1].x) / 2) + ' ' + ((pts[0].y + pts[1].y) / 2 + 9) + ' ' + pts[1].x + ' ' + pts[1].y +
+        ' Q ' + ((pts[1].x + pts[2].x) / 2) + ' ' + ((pts[1].y + pts[2].y) / 2 + 8) + ' ' + pts[2].x + ' ' + pts[2].y +
+        ' Q ' + (pts[2].x - 6) + ' ' + ((pts[2].y + pts[3].y) / 2) + ' ' + pts[3].x + ' ' + pts[3].y +
+        ' Q ' + ((pts[3].x + pts[4].x) / 2) + ' ' + ((pts[3].y + pts[4].y) / 2 - 6) + ' ' + pts[4].x + ' ' + pts[4].y +
+        ' Q ' + ((pts[4].x + pts[5].x) / 2) + ' ' + ((pts[4].y + pts[5].y) / 2 + 6) + ' ' + pts[5].x + ' ' + pts[5].y;
+      trail.innerHTML = '<path class="trail-shadow" d="' + pathD + '"></path>' +
+        '<path class="trail-gold" d="' + pathD + '"></path>';
+    }
+
+    var pinsWrap = el('world-map-pins');
+    if (!pinsWrap) return;
+    pinsWrap.innerHTML = '';
+
+    stages.forEach(function (stage) {
       var rec = st.completedStages[stage.id];
-      var card = document.createElement('article');
-      card.className = 'storybook-card';
-      card.style.borderTopColor = stage.accent;
-      card.style.borderTopWidth = '5px';
+      var isSelected = stage.id === selected.id;
+      var pos = stage.mapPos || { x: 50, y: 50 };
 
-      if (stage.bg && stage.heroSprite) {
-        var banner = document.createElement('div');
-        banner.className = 'card-scene-banner';
-        banner.innerHTML = '<img class="card-scene-bg" src="' + stage.bg + '" alt="">' +
-          '<div class="card-banner-scrim"></div>' +
-          '<div class="card-banner-badges">' +
-          '<span class="genre-badge">' + t('genres.' + stage.genreId) + '</span>' +
-          (stage.isHighestScoreStage ? '<span class="crown-pill">👑 ' + t('ui.highestScoreBadge') + '</span>' : '') +
-          '</div>' +
-          '<img class="card-hero-cutout" src="' + stage.heroSprite + '" alt="">';
-        card.appendChild(banner);
-      }
+      var pin = document.createElement('button');
+      pin.type = 'button';
+      pin.className = 'map-pin' + (isSelected ? ' is-selected' : '') + (rec ? ' is-cleared' : '');
+      pin.dataset.stageId = stage.id;
+      pin.style.left = pos.x + '%';
+      pin.style.top = pos.y + '%';
+      pin.style.setProperty('--pin-accent', stage.accent);
+      pin.setAttribute('aria-pressed', String(isSelected));
+      pin.setAttribute('aria-label', t('stages.' + stage.id + '.title') + ' — ' + t('genres.' + stage.genreId));
 
-      var top = document.createElement('div');
-      top.className = 'card-top';
-      var img = document.createElement('img');
-      img.className = 'card-portrait';
-      img.src = stage.portrait;
-      img.alt = t('viewpoints.' + stage.viewpoint);
+      var badgeText = rec ? '✓' : (stage.isHighestScoreStage ? '👑' : String(stage.order));
+      var starsHtml = rec ? '<span class="map-pin-stars" aria-hidden="true">' + '★'.repeat(rec.stars) + '☆'.repeat(3 - rec.stars) + '</span>' : '';
 
-      var info = document.createElement('div');
-      info.className = 'card-head-info';
-      info.innerHTML = '<div class="card-period">' + t('stages.' + stage.id + '.period') + ' · ' + t('viewpoints.' + stage.viewpoint) + '</div>' +
-        '<h3>' + t('stages.' + stage.id + '.title') + '</h3>';
+      pin.innerHTML = '<span class="map-pin-avatar">' +
+        '<span class="map-pin-halo" aria-hidden="true"></span>' +
+        '<img class="map-pin-sprite" src="' + stage.heroSprite + '" alt="">' +
+        '<span class="map-pin-badge">' + badgeText + '</span>' +
+        '</span>' +
+        '<span class="map-pin-label">' + t('stages.' + stage.id + '.mapLabel') + '</span>' +
+        starsHtml;
 
-      top.appendChild(img);
-      top.appendChild(info);
-      card.appendChild(top);
-
-      var desc = document.createElement('p');
-      desc.className = 'card-desc';
-      desc.textContent = t('stages.' + stage.id + '.desc');
-      card.appendChild(desc);
-
-      var bottom = document.createElement('div');
-      bottom.className = 'card-bottom';
-      var stars = document.createElement('span');
-      stars.className = 'card-stars';
-      stars.textContent = rec ? ('★'.repeat(rec.stars) + '☆'.repeat(3 - rec.stars)) : '☆☆☆';
-
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn-sunny';
-      btn.textContent = rec ? t('ui.replayStage') : t('ui.playStage');
-      btn.addEventListener('click', function () {
+      pin.addEventListener('click', function () {
+        root.COG.Audio.play('click');
+        selectStage(stage.id, true);
+      });
+      pin.addEventListener('dblclick', function () {
         root.COG.Audio.play('choice');
+        selectStage(stage.id, false);
         startStage(stage);
       });
 
-      bottom.appendChild(stars);
-      bottom.appendChild(btn);
-      card.appendChild(bottom);
-      grid.appendChild(card);
+      pinsWrap.appendChild(pin);
     });
+  }
+
+  function renderBriefingPanel() {
+    var t = function (k) { return root.COG.i18n.t(k); };
+    var st = root.COG.State.get();
+    var stages = root.COG.DATA.STAGES || [];
+    var stage = getSelectedStage();
+    if (!stage) return;
+    var rec = st.completedStages[stage.id];
+
+    var panel = el('stage-briefing-panel');
+    if (panel) panel.style.borderTopColor = stage.accent;
+
+    var bg = el('brief-bg');
+    if (bg) bg.src = stage.bg;
+    var heroSprite = el('brief-hero-sprite');
+    if (heroSprite) heroSprite.src = stage.heroSprite;
+    var chapterBadge = el('brief-chapter-badge');
+    if (chapterBadge) chapterBadge.textContent = 'STAGE ' + stage.order + ' / ' + stages.length;
+    var genreEl = el('brief-genre');
+    if (genreEl) genreEl.textContent = t('genres.' + stage.genreId);
+    var crownEl = el('brief-crown');
+    if (crownEl) crownEl.hidden = !stage.isHighestScoreStage;
+
+    var portrait = el('brief-portrait');
+    if (portrait) {
+      portrait.src = stage.portrait;
+      portrait.alt = t('viewpoints.' + stage.viewpoint);
+    }
+    var periodEl = el('brief-period');
+    if (periodEl) periodEl.textContent = t('stages.' + stage.id + '.period') + ' · ' + t('viewpoints.' + stage.viewpoint);
+    var titleEl = el('brief-title');
+    if (titleEl) titleEl.textContent = t('stages.' + stage.id + '.title');
+    var starsEl = el('brief-stars');
+    if (starsEl) starsEl.textContent = rec ? ('★'.repeat(rec.stars) + '☆'.repeat(3 - rec.stars)) : '☆☆☆';
+    var bestEl = el('brief-best-score');
+    if (bestEl) bestEl.textContent = rec ? (t('ui.bestScore') + ': ' + rec.bestScore.toLocaleString()) : t('ui.unplayed');
+
+    var descEl = el('brief-desc');
+    if (descEl) descEl.textContent = t('stages.' + stage.id + '.desc');
+    var objEl = el('brief-objective');
+    if (objEl) objEl.textContent = t('stages.' + stage.id + '.objective');
+    var ctrlEl = el('brief-controls');
+    if (ctrlEl) ctrlEl.textContent = t('stages.' + stage.id + '.controls');
+
+    var sid = (stage.scriptureIds && stage.scriptureIds[0]) || null;
+    var verseText = el('brief-verse-text');
+    var verseRef = el('brief-verse-ref');
+    if (sid && verseText && verseRef) {
+      verseText.textContent = '“' + t('bible.' + sid + '.text') + '”';
+      verseRef.textContent = '— ' + t('bible.' + sid + '.ref');
+    }
+
+    var launchBtn = el('btn-launch-selected');
+    if (launchBtn) {
+      launchBtn.textContent = (rec ? t('ui.replayStage') : t('ui.playStage')) + ' · ' + t('stages.' + stage.id + '.mapLabel');
+    }
+  }
+
+  function selectStage(stageId, announce) {
+    var activeEl = document.activeElement;
+    var wasPinFocused = !!(activeEl && activeEl.classList && activeEl.classList.contains('map-pin'));
+    selectedStageId = stageId;
+    renderWorldMap();
+    renderBriefingPanel();
+    if (wasPinFocused) {
+      var targetPin = document.querySelector('#world-map-pins .map-pin[data-stage-id="' + stageId + '"]');
+      if (targetPin) targetPin.focus();
+    }
+    if (announce && el('live-announcer')) {
+      var stg = getSelectedStage();
+      if (stg) {
+        el('live-announcer').textContent = root.COG.i18n.t('stages.' + stg.id + '.title');
+      }
+    }
+  }
+
+  function renderGallery() {
+    renderWorldMap();
+    renderBriefingPanel();
   }
 
   function renderStageHeader() {
@@ -232,6 +313,7 @@
       },
       onReset: function () {
         root.COG.State.reset();
+        selectedStageId = 'eden';
         showGallery();
       },
       onDialogClosed: function () {
@@ -272,10 +354,34 @@
 
     el('btn-back-gallery').addEventListener('click', showGallery);
     el('btn-retry-stage').addEventListener('click', function () { if (activeStage) startStage(activeStage); });
+    el('btn-prev-stage').addEventListener('click', function () {
+      var stages = root.COG.DATA.STAGES || [];
+      if (!stages.length) return;
+      var idx = stages.findIndex(function (s) { return s.id === getSelectedStage().id; });
+      var prev = stages[(idx - 1 + stages.length) % stages.length];
+      root.COG.Audio.play('click');
+      selectStage(prev.id, true);
+    });
+    el('btn-next-stage-hub').addEventListener('click', function () {
+      var stages = root.COG.DATA.STAGES || [];
+      if (!stages.length) return;
+      var idx = stages.findIndex(function (s) { return s.id === getSelectedStage().id; });
+      var next = stages[(idx + 1) % stages.length];
+      root.COG.Audio.play('click');
+      selectStage(next.id, true);
+    });
+    el('btn-launch-selected').addEventListener('click', function () {
+      root.COG.Audio.play('choice');
+      startStage(getSelectedStage());
+    });
     el('btn-toggle-touch').addEventListener('click', function () {
       touchEnabled = !touchEnabled;
       el('touch-pad').hidden = !touchEnabled;
     });
+
+    if (st && st.activeStage && (root.COG.DATA.STAGES || []).some(function (s) { return s.id === st.activeStage; })) {
+      selectedStageId = st.activeStage;
+    }
 
     bindTouchPad();
     renderHud();
