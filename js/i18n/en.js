@@ -8,262 +8,212 @@
     langName: 'English',
     langNative: 'English',
     appTitle: 'Choice of God',
-    appSubtitle: 'Genesis & Exodus Open-Field Action RPG Adventure',
-    metaTitle: 'Choice of God v2.0 — Biblical Action RPG',
+    appSubtitle: 'Cute Storybook Multi-Genre RPG Adventure (Genesis & Exodus)',
+    appTagline: 'A sparkling Bible picture-book adventure where every stage transforms into a brand-new genre!',
+    metaTitle: 'Choice of God v3.0 — Cute Storybook Multi-Genre RPG',
     ui: {
-      hp: 'HP',
-      mp: 'Spirit MP',
-      xp: 'XP',
-      level: 'Lv',
+      galleryTitle: 'Choose Your Story & Genre Freely',
+      galleryHint: 'Pick any hero and biblical stage in any order! Guarding Eden through Stage 1 awards the highest +5,000 Crown Bonus.',
+      highestScoreBadge: 'Highest Score Route (+5,000)',
       score: 'Score',
-      atk: 'ATK',
-      def: 'DEF',
-      speed: 'Speed',
+      level: 'Lv',
       faith: 'Faith',
       wisdom: 'Wisdom',
       mercy: 'Mercy',
       route: 'Eden Branch',
-      routeUndecided: 'Undecided (Exploring)',
-      routePreserved: 'Eden Preserved (Crown)',
-      routeFallen: 'Beyond Eden (Redemption)',
-      worldMap: 'World Map / Fast Travel (M)',
-      characterSheet: 'Hero · Skills · Relics (C)',
+      routeUndecided: 'Exploring',
+      routePreserved: 'Eden Preserved',
+      routeFallen: 'History & Redemption',
+      activeGuide: 'Companion',
+      playStage: 'Play This Genre',
+      replayStage: 'Replay Stage',
+      backToGallery: 'Storybook Map',
+      retry: 'Try Again',
+      nextStage: 'Next Stage',
       codex: 'Scripture Codex',
-      settings: 'Settings & Language',
-      help: 'Controls & Guide',
-      touchControls: 'Touch Pad',
+      inventory: 'Relics & Angels',
+      help: 'How to Play',
+      settings: 'Settings · Language',
       soundOn: 'Sound On',
       soundOff: 'Sound Off',
       language: 'Language',
       close: 'Close',
-      confirm: 'Confirm',
-      resetProgress: 'Reset Save Data',
-      resetConfirm: 'Reset all hero levels, relics, quests, and scores?',
-      questTracker: 'Active Zone Quests',
-      questsDone: 'Done',
-      bossAlert: 'Boss Encounter!',
-      interactPrompt: '[E] Talk / Interact',
-      slashBtn: 'Slash (Space)',
-      dashBtn: 'Dash (Shift)',
-      interactBtn: 'Interact (E)',
-      skillPoints: 'Skill Points',
-      upgradeSkill: 'Upgrade (+1)',
-      maxed: 'MAX',
-      equipped: 'Equipped',
-      equip: 'Equip',
+      confirm: 'OK',
+      resetProgress: 'Reset Progress',
+      resetConfirm: 'Reset all scores, levels, relics, and completed stages?',
+      touchControls: 'Touch Pad',
+      actionBtn: 'Action / Attack (Space)',
+      dashBtn: 'Dash Roll (Shift)',
+      endDialogue: 'End Chat',
       unlocked: 'Owned',
       locked: 'Locked',
       requiresLevel: 'Joins at Lv.{lv}',
-      activeGuide: 'Companion Guide',
       selectGuide: 'Choose Guide',
-      selected: 'Active',
-      travelToZone: 'Travel to This Zone',
-      currentZone: 'Current Zone',
-      highestScoreBadge: 'Highest Score Route (+5,000)',
-      freeTravelHint: 'Travel freely at any time across all 6 Genesis & Exodus open-world regions and 4 hero viewpoints. Defeating the Ancient Serpent in Eden without eating the fruit unlocks the +5,000 Crown Bonus!',
-      slotWeapon: 'Weapon',
-      slotCloak: 'Cloak',
-      slotRelic: 'Sacred Relic',
-      slotEmpty: 'Empty',
-      levelUpToast: 'Level Up! Lv.{lv} (+1 Skill Point)',
-      questDoneToast: 'Quest Completed: {title}',
-      bossDefeatedToast: 'Boss Purified! +{score} pts',
-      respawnToast: 'Restored at Sanctuary!',
-      endingBtn: 'View Journey Finale',
-      endingTitle: 'Chronicle Finale — Choice of God',
-      endingClose: 'Return to Field',
-      endDialogue: 'End Conversation',
-      controlsHint: 'Move: WASD/Arrows · Attack: Space/Click · Dash: Shift · Skills: 1/2/3 · Interact: E · Map: M · Hero: C',
+      selected: 'Following',
+      completedBadge: 'Clear',
+      stageClear: 'Stage Cleared!',
+      stageFailed: 'Almost There — Try Again!',
+      viewEnding: 'View Storybook Finale',
+      endingTitle: 'Storybook Finale — Choice of God',
+      endingClose: 'Back to Storybook Map',
       allChapters: 'All',
       genesisBook: 'Genesis',
       exodusBook: 'Exodus',
       danielBook: 'Daniel',
-      helpBody1: '1. Explore 6 seamless open fields (1920x1280). Walk up to golden NPCs or glowing crystals/beacons and press [E] or Interact to speak or collect.',
-      helpBody2: '2. Press [Space] or click the canvas to unleash directional blade/staff slashes, [Shift] to dodge-dash with invulnerability, and [1/2/3] for active skills.',
-      helpBody3: '3. Follow the top-right Quest Tracker to purify enemies and defeat multi-phase Bosses, earning XP, Skill Points, and equipable Sacred Relics in [C].',
-      helpBody4: '4. Open the World Map [M] anytime to freely switch viewpoints between Adam & Eve, Noah, Abraham, and Moses!'
+      controlsHint: 'Move: WASD/Arrows · Attack/Aim: Space/Click · Dash: Shift · 6 Unique Genres!',
+      helpBody1: '1. Pick any of the 6 illustrated stages (Adam & Eve, Noah, Abraham, Moses) freely from the Storybook Map.',
+      helpBody2: '2. Each stage switches genres: 1. Action RPG -> 2. Building Sim -> 3. Hex Turn-Based Strategy -> 4. JRPG Battle -> 5. 3-Lane RTS Defense -> 6. 1st-Person Light Aiming!',
+      helpBody3: '3. Defeating the playful Serpent in Stage 1 without eating the forbidden fruit unlocks the +5,000 Crown Bonus; eating opens the redemption path.',
+      helpBody4: '4. Leveling up unlocks 5 cute angel companions and 8 sacred relics that strengthen your heroes.'
     },
-    viewpoints: {
-      adam_eve: 'Adam & Eve (Creation & Eden)',
-      noah: 'Noah (The Ark & Deluge)',
-      abraham: 'Abraham (Journey of Faith)',
-      moses: 'Moses (Exodus & Sinai)'
+    viewpoints: { adam_eve: 'Adam & Eve', noah: 'Noah', abraham: 'Abraham', moses: 'Moses' },
+    genres: {
+      action_rpg: '⚔️ Action RPG (Zelda Style)',
+      city_sim: '🏡 Building Sim (Sims / Cozy Town)',
+      hex_tbs: '♟️ Hex Turn-Based Strategy (Civ Style)',
+      jrpg_battle: '🃏 Turn-Based JRPG Battle (FF Style)',
+      rts_defense: '🛡️ Real-Time Strategy RTS (3-Lane)',
+      fps_light: '✨ 1st-Person Light Shooter (FPS)'
     },
-    books: {
-      genesis: 'Genesis',
-      exodus: 'Exodus',
-      daniel: 'Daniel'
-    },
-    zones: {
+    books: { genesis: 'Genesis', exodus: 'Exodus', daniel: 'Daniel' },
+    stages: {
       eden: {
-        title: 'Zone 1. Garden of Eden',
+        title: 'Stage 1. Garden of Eden — Sunny Action RPG',
         period: 'Genesis 1–3',
-        desc: 'Lush paradise watered by four rivers around the Tree of Life. Gather Creation Light and banish the Serpent, or face the choice at the western Tree of Knowledge.'
+        objective: 'Gather 5 Creation Stars, speak with baby Cherubim, and purify the Serpent (or choose at the Tree of Knowledge)!',
+        desc: 'Dash and slash across a sunlit meadow with four sparkling rivers as adorable chibi Adam & Eve.',
+        outroPreserved: 'Holding fast to God’s Word, Eden blossoms forever as Paradise! (+5,000 Crown Bonus)',
+        outroFallen: 'Clothed in God’s warm Garment of Skin, humanity steps forward into the story of redemption!'
       },
       ark: {
-        title: 'Zone 2. Valley of the Ark',
+        title: 'Stage 2. Noah’s Ark — Cozy Village Builder',
         period: 'Genesis 6–9',
-        desc: 'Rain-swept shipyard where the great Ark rises. Gather gopher timber and pitch, guide animal pairs aboard, and defeat Leviathan of the storm.'
+        objective: 'Build Timber Mills, Pitch Wells & Animal Shelters on meadow tiles, welcome baby animals, and reach 100% Ark!',
+        desc: 'Construct timber workshops on a 6x4 sunny grid, harvest resources, and guide baby animals aboard the Ark.',
+        outro: 'All baby animals are safely aboard and a bright pastel rainbow shines over the valley!'
       },
       abraham: {
-        title: 'Zone 3. Canaan & Mount Moriah',
+        title: 'Stage 3. Abraham — Hex Strategy Expedition',
         period: 'Genesis 12–22',
-        desc: 'Starlit hills of promise. Resolve Lot’s parting with grace, kindle five Covenant Star Beacons, and break Chedorlaomer’s raiders.'
+        objective: 'March turn-by-turn across Canaan’s hex tiles, light 3 Star Shrines, and reach Mount Moriah!',
+        desc: 'Command Abraham’s caravan across pastel hexes with diplomacy choices, star shrines, and tactical clashes.',
+        outro: 'Faith shining brighter than the stars guides you safely to Mount Moriah — Jehovah-Jireh!'
       },
       plagues: {
-        title: 'Zone 4. Goshen & Pharaoh’s Court',
+        title: 'Stage 4. Moses & Ten Plagues — JRPG Battle',
         period: 'Exodus 3–12',
-        desc: 'Answer the Burning Bush, seal five Goshen doorframes for Passover, and defeat Pharaoh’s High Magicians.'
+        objective: 'Lead Moses & Aaron in turn-based JRPG combat using iconic Miracle Skills to overcome Pharaoh’s court!',
+        desc: 'Side-view turn-based RPG duel featuring Nile Waves, Bouncing Frogs, Sky Hail, Goshen Shield & Passover Seal.',
+        outro: 'Goshen glows beneath the golden shield and the dawn of the Exodus opens!'
       },
       redsea: {
-        title: 'Zone 5. The Parted Red Sea',
+        title: 'Stage 5. Crossing the Red Sea — 3-Lane RTS',
         period: 'Exodus 13–15',
-        desc: 'A dry seabed corridor flanked by towering walls of turquoise water. Light the Pillar beacons, rally Israel, and stop the Royal Chariot Captain.'
+        objective: 'Spend regenerating Faith Mana to summon Angels, Knights & Miriam across 3 lanes and unleash the Staff Wave!',
+        desc: 'Real-time 3-lane defense between fish-filled turquoise water walls against oncoming chariots!',
+        outro: 'Every traveler reaches the sunny eastern shore as Miriam’s victory song fills the sky!'
       },
       sinai: {
-        title: 'Zone 6. Mount Sinai & Tabernacle',
+        title: 'Stage 6. Mount Sinai — 1st-Person Light Aim & Finale',
         period: 'Exodus 16–40',
-        desc: 'Collect morning Manna, reject the Golden Calf at camp, repel Amalekite raiders, and consecrate the Tabernacle in glory.'
+        objective: 'Aim Moses’s glowing staff to catch 8 Manna stars and purify 8 Golden Calf shadow wisps!',
+        desc: 'First-person light-staff aiming action over Mount Sinai, crowning the golden Tabernacle.',
+        outro: 'The cloud of glory fills the golden Tabernacle, completing the Genesis & Exodus chronicle!'
       }
     },
-    quests: {
-      'eden-q1': { title: 'Restore Creation Light', desc: 'Collect 5 glowing Creation Light crystals beside the four rivers [E].' },
-      'eden-q2': { title: 'Council with Cherubim', desc: 'Speak with the winged Cherubim guarding the eastern sanctuary [E].' },
-      'eden-q3': { title: 'Purify Shadow Serpents', desc: 'Defeat 5 Shadow Serpents & Wisps creeping into Eden.' },
-      'eden-q4': { title: 'Boss: Ancient Serpent or Crossroads', desc: 'Purify the Ancient Serpent to preserve Paradise (+5,000), or interact with the western Tree.' },
-      'ark-q1': { title: 'Gopher Wood & Pitch', desc: 'Gather 6 bundles of timber and pitch around the valley [E].' },
-      'ark-q2': { title: 'Escort Animal Pairs', desc: 'Guide 4 animal pairs safely toward the Ark [E].' },
-      'ark-q3': { title: 'Repel Storm Wraiths', desc: 'Defeat 5 Storm Wraiths battering the shipyard.' },
-      'ark-q4': { title: 'Boss: Leviathan of the Deep', desc: 'Vanquish Leviathan to seal the Rainbow Covenant.' },
-      'abraham-q1': { title: 'Peace with Lot', desc: 'Speak with Lot at the southern camp to resolve pasture strife [E].' },
-      'abraham-q2': { title: 'Covenant Star Beacons', desc: 'Kindle all 5 Star Beacons across Canaan [E].' },
-      'abraham-q3': { title: 'Rescue the Valley', desc: 'Defeat 5 invading raiders across the eastern hills.' },
-      'abraham-q4': { title: 'Boss: Warlord Chedorlaomer', desc: 'Defeat Chedorlaomer near Mount Moriah.' },
-      'plagues-q1': { title: 'The Burning Bush', desc: 'Receive your calling before the Angel of the LORD [E].' },
-      'plagues-q2': { title: 'Passover Doorpost Seals', desc: 'Apply the Passover mark to 5 Goshen dwellings [E].' },
-      'plagues-q3': { title: 'Breach the Outer Court', desc: 'Defeat 5 Egyptian Magicians and Palace Guards.' },
-      'plagues-q4': { title: 'Boss: High Magician of Egypt', desc: 'Defeat the High Magician inside the royal courtyard.' },
-      'redsea-q1': { title: 'Pillar of Fire Beacons', desc: 'Light 4 Pillar waypoints across the parted seabed [E].' },
-      'redsea-q2': { title: 'Rally the Travelers', desc: 'Guide 4 Israelite groups forward through the waters [E].' },
-      'redsea-q3': { title: 'Hold Back Pursuit', desc: 'Destroy 5 pursuing Egyptian Chariots and Guards.' },
-      'redsea-q4': { title: 'Boss: Royal Chariot Captain', desc: 'Defeat Pharaoh’s Chariot Captain near the eastern shore.' },
-      'sinai-q1': { title: 'Daily Morning Manna', desc: 'Gather 6 portions of Manna near Horeb Rock and the flats [E].' },
-      'sinai-q2': { title: 'Trial of the Golden Calf', desc: 'Confront Aaron and reject idolatry at the southern camp [E].' },
-      'sinai-q3': { title: 'Defend Against Amalek', desc: 'Defeat 6 Amalekite Raiders surrounding the camp.' },
-      'sinai-q4': { title: 'Boss: Amalek Warlord', desc: 'Defeat the Amalek Warlord to crown the Tabernacle in glory!' }
-    },
-    bosses: {
-      boss_serpent: { name: 'Ancient Serpent', subtitle: 'Tempter of Eden' },
-      boss_leviathan: { name: 'Leviathan of the Deep', subtitle: 'Tempest Sovereign' },
-      boss_chedorlaomer: { name: 'King Chedorlaomer', subtitle: 'Eastern Alliance Warlord' },
-      boss_magician: { name: 'Pharaoh’s High Magician', subtitle: 'Master of Egyptian Sorcery' },
-      boss_chariot: { name: 'Royal Chariot Captain', subtitle: 'Vanguard of Pursuit' },
-      boss_amalek: { name: 'Amalek Warlord', subtitle: 'Final Trial of the Wilderness' }
+    stageUi: {
+      eden: {
+        stars: 'Stars', bossHp: 'Chibi Serpent Boss', hearts: 'Hearts',
+        hint: 'WASD/Arrows: Move · Space/Click: Light Slash · Shift: Dash · E: Talk to Angel/Tree'
+      },
+      ark: {
+        timber: 'Gopher Wood', pitch: 'Pitch', animals: 'Baby Animals', arkProg: 'Ark Progress',
+        tools: { mill: '🪵 Timber Mill (Free)', well: '🏺 Pitch Well (3 Wood)', pen: '🐑 Cozy Animal Pen (4 Wood)', buildArk: '🚢 Build Ark (+25% · 6 Wood, 4 Pitch)' },
+        harvestTip: 'Click grass tiles to build, and click built workshops anytime to harvest extra resources!'
+      },
+      abraham: {
+        turn: 'Turn', faith: 'Faith', food: 'Food', shrines: 'Star Shrines',
+        hint: 'Click highlighted adjacent hex tiles to march Abraham toward Mount Moriah (top-right)!'
+      },
+      plagues: {
+        mosesParty: 'Moses & Aaron', enemyParty: 'Pharaoh & Magician',
+        turnPlayer: 'Moses’s Turn — Choose a Miracle Skill!',
+        turnEnemy: 'Pharaoh prepares a counterattack...',
+        skills: [
+          { id: 'nile', name: '🌊 Crimson Nile Wave', desc: 'Hit all foes for 28 dmg (0 MP)' },
+          { id: 'frogs', name: '🐸 Bouncing Frogs', desc: 'Heavy single hit 42 dmg (15 MP)' },
+          { id: 'hail', name: '☄️ Starry Sky Hail', desc: 'Strong all-foe hit 48 dmg (24 MP)' },
+          { id: 'shield', name: '🛡️ Goshen Golden Shield', desc: 'Heal +35 HP & Shield (12 MP)' },
+          { id: 'passover', name: '🕊️ Passover Grace Seal', desc: 'Ultimate 65 dmg & Heal (32 MP)' }
+        ]
+      },
+      redsea: {
+        mana: 'Faith Mana', lane: 'Selected Lane', wave: 'Chariots Stopped', baseHp: 'Israel Convoy',
+        lanes: ['Top Lane (1)', 'Middle Lane (2)', 'Bottom Lane (3)'],
+        units: [
+          { id: 'angel', name: '👼 Angel Guardian (20)', cost: 20 },
+          { id: 'knight', name: '🛡️ Shield Knight (30)', cost: 30 },
+          { id: 'miriam', name: '🎵 Miriam Healer (25)', cost: 25 },
+          { id: 'wave', name: '🌊 Staff Tidal Wave! (45)', cost: 45 }
+        ]
+      },
+      sinai: {
+        manna: 'Manna Caught', purified: 'Shadows Purified', time: 'Sunlight Left',
+        hint: 'Aim with mouse or touch and Click (or Space) to fire light! Catch golden Manna and purify purple wisps!'
+      }
     },
     speakers: {
-      cherubim: 'Cherubim Guardian',
-      serpent: 'Serpent & Tree of Knowledge',
-      shem: 'Shem, Son of Noah',
-      lot: 'Lot, Kinsman of Abraham',
-      angel_lord: 'Angel in the Burning Bush',
-      miriam: 'Prophetess Miriam',
+      cherubim: 'Baby Cherubim Angel',
+      serpent: 'Playful Serpent & Apple Tree',
+      lot: 'Nephew Lot',
       aaron: 'Aaron & The Golden Calf'
-    },
-    skills: {
-      nova: { name: 'Word of Light Nova', desc: 'Erupts a radiant ring of golden light damaging and knocking back nearby foes.' },
-      beam: { name: 'Miracle Staff Beam', desc: 'Fires a piercing celestial lance of energy in your facing direction.' },
-      grace: { name: 'Tree of Life Grace', desc: 'Restores HP immediately and wraps you in a golden shield.' }
-    },
-    guides: {
-      cherubim: {
-        name: 'Cherubim',
-        role: 'Guardian of Eden (+5 ATK, +2 DEF)',
-        desc: 'Bearer of the flaming sword in Genesis 3:24. Bolsters strike power from Level 1.',
-        quote: '“Raise the light of the Word and guard the way of life.”'
-      },
-      angel_lord: {
-        name: 'Angel of the LORD',
-        role: 'Voice in the Bush (+9 ATK, +MP Regen)',
-        desc: 'Revealed in Exodus 3:2 within unconsumed fire. Speeds Spirit MP regeneration.',
-        quote: '“The ground where you stand is holy; go forth without fear.”'
-      },
-      pillar_fire: {
-        name: 'Pillar of Cloud & Fire',
-        role: 'Desert Pathfinder (+18 Speed, +12 ATK)',
-        desc: 'From Exodus 13:21, accelerating movement speed and battle prowess.',
-        quote: '“By day and by night My guidance shall never leave you.”'
-      },
-      gabriel: {
-        name: 'Angel Gabriel',
-        role: 'Messenger of Wisdom (+2.8 MP/s, +12% Score)',
-        desc: 'Sent in Daniel 8:16 to sharpen skill casting and reward mastery.',
-        quote: '“Every divine promise reaches fulfillment at its appointed hour.”'
-      },
-      michael: {
-        name: 'Archangel Michael',
-        role: 'Champion of the Covenant (+22 ATK, +14 DEF, +20% Score)',
-        desc: 'The great prince of Daniel 10:13 granting supreme battlefield protection.',
-        quote: '“Stand firm to the end; heaven’s shield marches beside you.”'
-      }
-    },
-    items: {
-      word_of_light: { name: 'Blade of Creation Light', desc: 'Forged from Genesis 1:3 “Let there be light.” (+8 ATK, +15 MP)' },
-      staff_of_moses: { name: 'Staff of Moses', desc: 'The miracle rod of Exodus 4:2. (+12 ATK, +20 MP, +10 HP)' },
-      stone_tablets: { name: 'Tablets of Testimony', desc: 'Supreme Sinai covenant relic. (+22 ATK, +8 DEF, +30 HP)' },
-      garment_of_skin: { name: 'Garment of Skin', desc: 'God’s merciful covering from Genesis 3:21. (+9 DEF, +40 HP)' },
-      blood_of_lamb: { name: 'Passover Mantle', desc: 'Goshen’s protective cloak from Exodus 12:13. (+15 DEF, +55 HP)' },
-      tree_of_life_leaf: { name: 'Leaf of the Tree of Life', desc: 'Crown relic for preserving Eden. (+60 HP, +25 MP, +8 ATK)' },
-      olive_branch: { name: 'Dove’s Olive Branch', desc: 'Swift token of peace after the flood. (+28 Speed, +35 HP)' },
-      star_compass: { name: 'Star Covenant Compass', desc: 'Celestial promise of Abraham. (+12 ATK, +35 MP, +6 DEF)' }
     },
     dialogues: {
       eden_cherubim: {
-        n1: 'Adam and Eve, the four rivers sing in harmony, yet a dark whisper creeps beneath the western boughs. How will you respond?',
-        c1: 'We will hold fast to the Word and guard Eden to the very end. (+3 Faith, Heal)',
-        c2: 'We will stay watchful and discern the shadow from the west. (+4 Wisdom, +150 Score)',
-        n2: 'Noble resolve! May celestial light empower your blade and steps.',
-        n3: 'Stay vigilant — deception speaks softly, while life abides in truth.'
+        n1: 'Hi Adam and Eve! Sparkling Creation Stars fell by the rivers and a mischievous serpent appeared to the west. What will you do?',
+        c1: 'We’ll trust God’s Word and guard Eden with all our hearts! (+4 Faith, Heal)',
+        c2: 'We’ll check out the western grove wisely and stay alert! (+5 Wisdom, +150 Score)',
+        n2: 'Wonderful! May golden sparkles empower your blade!',
+        n3: 'Be careful! Sweet temptations wait under the western tree.'
       },
       eden_crossroads: {
-        n1: 'The Serpent whispers from the Tree of Knowledge: “Did God really say you must not eat? Your eyes will be opened!” Choose your destiny:',
-        c_resist: '“Be gone!” Reject temptation, uphold the Word, and purify the Ancient Serpent (Highest Score Route)',
-        c_eat: 'Taste the fruit — step beyond Eden into human history and redemption (Unlocks Garment of Skin)',
-        n_resist: 'Brilliant light shatters the shadow! Defeat the Serpent to preserve Eden forever (+5,000 Bonus)!',
-        n_eat: 'Sorrow enters, yet God clothes you in mercy and opens the grand story of Noah, Abraham, and Exodus!'
-      },
-      ark_shem: {
-        n1: 'Father Noah, dark clouds gather above! Are the gopher timbers, pitch, and animal pairs ready before the floodgates burst?',
-        c1: 'Every task follows God’s design — we will save every living pair. (+4 Faith, Heal)',
-        c2: 'Let us brace the shipyard against the coming storm wraiths. (+4 Wisdom, +120 Score)',
-        n2: 'Surely the LORD will carry the Ark safely over the waters!'
+        n1: 'The purple serpent grins under the glowing apples: “Did God really say not to eat? Just one yummy bite opens your eyes!”',
+        c_resist: '“No way! We keep God’s Word!” — Reject & Guard Paradise (+5,000 Crown Route)',
+        c_eat: '“Just one bite...” — Enter Human History & Redemption (Unlocks Garment of Skin)',
+        n_resist: 'Golden light bursts forth! Defeat the Serpent Boss to preserve Eden forever!',
+        n_eat: 'Though toil begins, God wraps you in a cozy Garment of Skin and opens Noah, Abraham & Moses’s journey!'
       },
       abraham_lot: {
-        n1: 'Uncle Abraham, our herdsmen quarrel daily over pastures and wells. How shall we divide this land?',
-        c_peace: '“We are kinsmen; let there be no strife. Choose the fertile plains first.” (+6 Faith, +8 Mercy)',
-        c_firm: '“Let us establish clear boundaries so order remains.” (+5 Wisdom)',
-        n_peace: 'Your generosity humbles me. May God grant you descendants countless as the stars!',
-        n_firm: 'A measured choice. Go kindle the star beacons of promise across Canaan.'
-      },
-      plagues_bush: {
-        n1: 'Moses, Moses! Take off your sandals, for this place is holy ground. I have seen My people’s affliction and send you to Pharaoh.',
-        c_obey: '“Here am I, LORD! With Your staff I will deliver Israel!” (+7 Faith, Heal)',
-        c_humble: '“Though slow of speech, I trust Your presence to guide me.” (+6 Mercy, Heal)',
-        n_obey: 'I will surely be with you! Seal Goshen’s doorposts and confront Egypt’s court.',
-        n_humble: 'My power will speak through the staff in your hand. March forward in courage!'
-      },
-      redsea_miriam: {
-        n1: 'Brother Moses! Chariots thunder behind us while walls of water tower on left and right. The people tremble!',
-        c1: '“Fear not, stand firm, and see the salvation of the LORD!” (+5 Faith, Heal)',
-        c2: '“Follow the Pillar of Fire in order; not one soul shall be left behind!” (+5 Wisdom, +4 Mercy)',
-        n2: 'Courage returns to Israel! Strike down the Chariot Captain and reach the shore!'
+        n1: 'Uncle Abraham! Our fluffy flocks grew too huge for one hill. How shall we share the land?',
+        c_peace: '“We’re family! Let’s never quarrel — pick whichever green valley you like first.” (+6 Faith, +8 Mercy)',
+        c_firm: '“Let’s mark friendly borders so both camps stay peaceful.” (+6 Wisdom)',
+        n_peace: 'Your kindness melts my heart! May God bless you with descendants like the stars!',
+        n_firm: 'Smart plan! Let’s march onward and light the Star Shrines!'
       },
       sinai_calf: {
-        n1: 'While you were on the mountain, the people grew restless and forged a Golden Calf! What will you do?',
-        c_shatter: '“You shall have no other gods before the LORD!” Shatter the idol and uphold the Law (+10 Faith, +8 Wisdom)',
-        c_pray: 'Halt the idolatry and intercede with mercy for the people (+9 Mercy, +6 Faith)',
-        n_shatter: 'The camp turns back in repentance! Now repel Amalek from the north and consecrate the Tabernacle!',
-        n_pray: 'Heaven hears your prayer. Raise the Tabernacle and behold the glory of God!'
+        n1: 'Moses! Some folks got impatient and want a Golden Calf statue. What should we do?',
+        c_shatter: '“Only the LORD is God!” Banish the idol and uphold the Ten Words (+10 Faith)',
+        c_pray: 'Pray tenderly to turn everyone’s hearts back to God (+9 Mercy)',
+        n_shatter: 'Everyone cheers in repentance! Now aim the Light Staff to purify the shadows!',
+        n_pray: 'Heaven smiles down! Time to consecrate the Tabernacle!'
       }
+    },
+    guides: {
+      cherubim: { name: 'Baby Cherubim', role: 'Eden Guardian (+6 ATK)', desc: 'Fluffy-winged guardian angel who cheers you on from Lv.1.', quote: '“Let’s protect the garden with sparkling light!”' },
+      angel_lord: { name: 'Angel of the LORD', role: 'Burning Bush Guide (+10 ATK, +5% Score)', desc: 'Warm flame messenger from Exodus 3:2.', quote: '“Be brave — I’m walking right beside you!”' },
+      pillar_fire: { name: 'Cloud & Fire Pillar', role: 'Desert Pathfinder (+14 ATK, +10% Score)', desc: 'Bright guide shining day and night across the desert.', quote: '“Not even the darkest night can hide our path!”' },
+      gabriel: { name: 'Angel Gabriel', role: 'Wisdom Messenger (+18 ATK, +15% Score)', desc: 'Joyful messenger of Daniel 8:16.', quote: '“Every wonderful promise blooms right on time!”' },
+      michael: { name: 'Archangel Michael', role: 'Heavenly Captain (+24 ATK, +22% Score)', desc: 'Courageous defender of Daniel 10:13.', quote: '“Stay bold to the finish — victory shines ahead!”' }
+    },
+    items: {
+      word_of_light: { name: 'Sparkle Blade of Light', desc: 'Shining sword from Genesis 1:3 (+6 ATK)' },
+      staff_of_moses: { name: 'Golden Shepherd Staff', desc: 'Moses’s miracle staff from Exodus 4:2 (+10 ATK)' },
+      tree_of_life_leaf: { name: 'Tree of Life Leaf Crown', desc: 'Awarded for guarding Paradise (+35 HP, +4 Faith)' },
+      garment_of_skin: { name: 'Cozy Garment of Skin', desc: 'Warm covering of mercy from Genesis 3:21 (+8 DEF, +4 Mercy)' },
+      olive_branch: { name: 'Dove’s Olive Twig', desc: 'Peaceful gift after the flood (+25 HP)' },
+      star_compass: { name: 'Starlight Compass', desc: 'Reflects Abraham’s starry promise (+8 ATK, +5 Wisdom)' },
+      blood_of_lamb: { name: 'Passover Gold Shield', desc: 'Protected Goshen during Exodus (+12 DEF)' },
+      stone_tablets: { name: 'Tablets of Sinai', desc: 'Crowning covenant relic (+16 ATK, +10 DEF)' }
     },
     bible: {
       gen_1_1: { ref: 'Genesis 1:1', text: 'In the beginning, God created the heavens and the earth.' },
@@ -301,16 +251,16 @@
     },
     endings: {
       crown: {
-        title: 'Crown of Eden — Eternal Guardian of Paradise',
-        desc: 'You purified the Ancient Serpent without eating the forbidden fruit (+5,000 Bonus) and triumphed across Genesis and Exodus all the way to the glory of the Tabernacle!'
+        title: 'Crown of Eden — Shining Keeper of Paradise',
+        desc: 'You protected Eden for the +5,000 Crown Bonus and conquered all 6 distinct biblical game genres in radiant joy!'
       },
       covenant: {
-        title: 'Champion of the Covenant — Glory Upon Sinai',
-        desc: 'Braving the flood, Canaan, plagues, and the parted Red Sea, you led the people in faith and raised the sacred Tabernacle.'
+        title: 'Star of the Covenant — Glory Upon Sinai',
+        desc: 'Through Action RPG, Village Building, Hex Strategy, JRPG Battle, 3-Lane RTS, and Light Aiming, you raised the golden Tabernacle!'
       },
       pilgrim: {
-        title: 'Wanderer of Faith — Dawn of the Chronicle',
-        desc: 'Your journey is inscribed in legend! Explore remaining zones or defend Eden intact (+5,000 Bonus) to claim the Crown Ending.'
+        title: 'Storybook Pilgrim of Faith',
+        desc: 'A lovely start through Genesis & Exodus! Try clearing every genre and protecting Eden for the Crown ending!'
       }
     }
   };

@@ -25,23 +25,32 @@ for (const file of jsFiles) {
 }
 console.log(`   OK (${jsFiles.length} files passed node --check)`);
 
-console.log('2. Checking PNG icons...');
-for (const icon of ['icons/icon-192.png', 'icons/icon-512.png']) {
-  const buf = fs.readFileSync(path.join(ROOT, icon));
-  assert(buf.length > 500, `${icon} too small`);
-  assert.strictEqual(buf.slice(0, 8).toString('hex'), '89504e470d0a1a0a', `${icon} invalid PNG`);
+console.log('2. Checking PWA & Chibi portrait PNG assets...');
+const requiredPngs = [
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'assets/art/adam_eve.png',
+  'assets/art/noah.png',
+  'assets/art/abraham.png',
+  'assets/art/moses.png',
+  'assets/art/cherubim.png',
+  'assets/art/serpent.png'
+];
+for (const rel of requiredPngs) {
+  const buf = fs.readFileSync(path.join(ROOT, rel));
+  assert(buf.length > 1000, `${rel} too small`);
+  assert.strictEqual(buf.slice(0, 8).toString('hex'), '89504e470d0a1a0a', `${rel} invalid PNG signature`);
 }
-console.log('   OK (PNG signatures valid)');
+console.log(`   OK (${requiredPngs.length} PNG files verified)`);
 
-console.log('3. Loading v2.0 Action RPG data & i18n modules...');
+console.log('3. Loading v3.0 Storybook Multi-Genre data & i18n modules...');
 const langs = ['ko', 'en', 'ja', 'es', 'zh'];
 for (const l of langs) require(path.join(ROOT, 'js', 'i18n', `${l}.js`));
 const BIBLE = require(path.join(ROOT, 'js', 'data', 'bible.js'));
 const GUIDES = require(path.join(ROOT, 'js', 'data', 'guides.js'));
 const ITEMS = require(path.join(ROOT, 'js', 'data', 'items.js'));
-const SKILLS = require(path.join(ROOT, 'js', 'data', 'skills.js'));
 const DIALOGUES = require(path.join(ROOT, 'js', 'data', 'dialogues.js'));
-const ZONES = require(path.join(ROOT, 'js', 'data', 'zones.js'));
+const STAGES = require(path.join(ROOT, 'js', 'data', 'stages.js'));
 const I18n = require(path.join(ROOT, 'js', 'engine', 'i18n.js'));
 const State = require(path.join(ROOT, 'js', 'engine', 'state.js'));
 
@@ -78,78 +87,51 @@ for (const l of langs) {
 }
 console.log(`   OK (${koFlat.length} leaf keys identical across all 5 languages)`);
 
-console.log('5. Verifying 6 open-field zones, 24 quests, 6 bosses, 3 skills, 8 relics, 5 guides, dialogues & 32 scriptures...');
-assert.strictEqual(ZONES.length, 6);
-assert.strictEqual(SKILLS.length, 3);
-assert.strictEqual(ITEMS.length, 8);
-assert.strictEqual(GUIDES.length, 5);
-assert.strictEqual(BIBLE.length, 32);
-
+console.log('5. Verifying 6 distinct genres, portraits, guides, items, dialogues & 32 scriptures...');
+assert.strictEqual(STAGES.length, 6);
+const genreSet = new Set(STAGES.map((s) => s.genreId));
+assert.strictEqual(genreSet.size, 6, 'Expected 6 distinct game genres across the 6 stages');
 const bibleSet = new Set(BIBLE.map((b) => b.id));
-let totalQuests = 0;
-for (const z of ZONES) {
-  assert.strictEqual(z.width, 1920);
-  assert.strictEqual(z.height, 1280);
-  assert.strictEqual(z.quests.length, 4, `Zone ${z.id} expected 4 quests`);
-  assert(z.boss && z.boss.id, `Zone ${z.id} missing boss`);
-  for (const q of z.quests) {
-    totalQuests++;
-    assert(bibleSet.has(q.scriptureId), `Quest ${q.id} unknown scripture ${q.scriptureId}`);
-  }
-  for (const npc of z.npcs) {
-    assert(DIALOGUES[npc.dialogueId], `NPC ${npc.id} unknown dialogue ${npc.dialogueId}`);
+assert.strictEqual(BIBLE.length, 32);
+assert.strictEqual(GUIDES.length, 5);
+assert.strictEqual(ITEMS.length, 8);
+
+for (const stg of STAGES) {
+  assert(fs.existsSync(path.join(ROOT, stg.portrait)), `Missing portrait ${stg.portrait}`);
+  for (const sid of stg.scriptureIds) {
+    assert(bibleSet.has(sid), `Stage ${stg.id} unknown scripture ${sid}`);
   }
 }
-assert.strictEqual(totalQuests, 24);
-
 for (const dKey of Object.keys(DIALOGUES)) {
   const dlg = DIALOGUES[dKey];
-  assert(dlg.nodes && dlg.nodes.start, `Dialogue ${dKey} missing start node`);
+  assert(fs.existsSync(path.join(ROOT, dlg.portrait)), `Missing dialogue portrait ${dlg.portrait}`);
   for (const nKey of Object.keys(dlg.nodes)) {
     const node = dlg.nodes[nKey];
-    if (node.scriptureId) assert(bibleSet.has(node.scriptureId), `Dialogue ${dKey}.${nKey} bad scripture`);
+    if (node.scriptureId) assert(bibleSet.has(node.scriptureId), `Bad scripture in ${dKey}.${nKey}`);
     for (const l of langs) {
-      assert(flattenKeys(globalThis.COG.I18N[l]).some((x) => x.path === node.textKey), `Missing textKey ${node.textKey} in ${l}`);
+      assert(flattenKeys(globalThis.COG.I18N[l]).some((x) => x.path === node.textKey), `Missing ${node.textKey} in ${l}`);
     }
   }
 }
-console.log('   OK (All zone, quest, boss, dialogue & scripture links valid)');
+console.log('   OK (6 distinct genres, portraits & links verified)');
 
-console.log('6. Verifying RPG State machine, derived stats, skill upgrades, equipment, Eden +5,000 & guide unlocks...');
+console.log('6. Verifying RPG state, Eden +5,000 bonus & companion unlocks...');
 State.reset();
 I18n.init('ko');
 assert.strictEqual(I18n.getLang(), 'ko');
 I18n.setLang('en', true);
-assert.strictEqual(I18n.t('ui.worldMap'), 'World Map / Fast Travel (M)');
+assert.strictEqual(I18n.t('ui.backToGallery'), 'Storybook Map');
 
-const baseStats = State.getDerivedStats();
-assert(baseStats.atk > 18 && baseStats.maxHp >= 120);
+State.setEdenRoute('preserved');
+const edenRes = State.completeStage(STAGES[0], 1700, 3, { faith: 10 });
+assert.strictEqual(State.getTotalScore(), 6700, 'Expected 1700 + 5000 Eden Preserved Crown Bonus');
+assert.strictEqual(State.get().unlockedItems.includes('tree_of_life_leaf'), true);
 
-// Skill upgrade
-assert.strictEqual(State.upgradeSkill('nova'), true);
-assert.strictEqual(State.get().skillLevels.nova, 2);
-assert.strictEqual(State.get().skillPoints, 0);
+// Level up to unlock all 5 companions
+for (const s of STAGES) State.completeStage(s, s.baseScore, 3);
+State.addStat({});
+assert(State.getPlayerLevel() >= 6, `Expected Lv >= 6, got ${State.getPlayerLevel()}`);
+assert.strictEqual(State.getUnlockedGuides().length, 5, 'Expected all 5 cute companions unlocked');
 
-// Equip relic & verify stat increase
-assert.strictEqual(State.equipItem('staff_of_moses'), true);
-const staffStats = State.getDerivedStats();
-assert(staffStats.atk > baseStats.atk, 'Equipping Staff of Moses should increase ATK');
-
-// Free travel to Zone 5 (Red Sea)
-State.setActiveZone('redsea');
-assert.strictEqual(State.get().activeZoneId, 'redsea');
-
-// Defeat Eden boss without eating -> Preserved Crown +5,000 bonus
-State.reset();
-const edenRes = State.defeatBoss(ZONES[0]);
-assert.strictEqual(State.get().edenRoute, 'preserved');
-assert(State.getTotalScore() >= 5000 + ZONES[0].boss.score, 'Expected +5,000 Eden Preserved bonus');
-assert.strictEqual(edenRes.unlockedItem, 'tree_of_life_leaf');
-
-// Leveling up unlocks all 5 companions
-State.addRewards(5000, 0);
-assert(State.getPlayerLevel() >= 10, `Expected Lv >= 10, got ${State.getPlayerLevel()}`);
-assert.strictEqual(State.getUnlockedGuides().length, 5, 'Expected all 5 guides unlocked at Lv >= 10');
-
-console.log('   OK (All RPG state & progression checks passed)');
-console.log('ALL v2.0 VERIFICATION CHECKS PASSED!');
+console.log('   OK (All state & progression checks passed)');
+console.log('ALL v3.0 STORYBOOK VERIFICATION CHECKS PASSED!');

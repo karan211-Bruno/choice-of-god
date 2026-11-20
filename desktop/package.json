@@ -1,7 +1,7 @@
 {
   "name": "choice-of-god-desktop",
-  "version": "2.0.0",
-  "description": "Choice of God v2.0 - Genesis & Exodus Action RPG Desktop Wrapper",
+  "version": "3.0.0",
+  "description": "Choice of God v3.0 - Cute Storybook Multi-Genre RPG Desktop Wrapper",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -29,6 +29,7 @@
           "index.html",
           "manifest.webmanifest",
           "sw.js",
+          "assets/**/*",
           "css/**/*",
           "icons/**/*",
           "js/**/*"

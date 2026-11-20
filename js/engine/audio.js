@@ -29,7 +29,7 @@
       osc.frequency.setValueAtTime(freq, t0);
       if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
       g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(vol || 0.07, t0 + 0.015);
+      g.gain.exponentialRampToValueAtTime(vol || 0.065, t0 + 0.015);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
       osc.connect(g);
       g.connect(ac.destination);
@@ -44,54 +44,32 @@
     play: function (kind) {
       if (!enabled) return;
       switch (kind) {
-        case 'click':
-          tone(540, 0.06, 'triangle', 0.04, 0);
+        case 'click': tone(660, 0.06, 'sine', 0.045, 0); break;
+        case 'chime':
+          tone(587.33, 0.12, 'sine', 0.06, 0);
+          tone(880, 0.2, 'sine', 0.05, 0.06);
           break;
-        case 'slash':
-          tone(420, 0.11, 'triangle', 0.06, 0, 170);
+        case 'slash': tone(520, 0.1, 'triangle', 0.055, 0, 220); break;
+        case 'dash': tone(340, 0.11, 'sine', 0.05, 0, 740); break;
+        case 'magic':
+          tone(523.25, 0.14, 'triangle', 0.06, 0);
+          tone(783.99, 0.18, 'sine', 0.06, 0.06);
+          tone(1046.5, 0.24, 'sine', 0.05, 0.12);
           break;
-        case 'dash':
-          tone(280, 0.12, 'sine', 0.05, 0, 620);
-          break;
-        case 'skill_nova':
-          tone(440, 0.25, 'triangle', 0.07, 0, 880);
-          tone(659, 0.25, 'sine', 0.06, 0.05);
-          break;
-        case 'skill_beam':
-          tone(740, 0.28, 'sawtooth', 0.05, 0, 320);
-          break;
-        case 'heal':
-          tone(523, 0.16, 'sine', 0.06, 0);
-          tone(659, 0.18, 'sine', 0.06, 0.08);
-          tone(784, 0.28, 'sine', 0.06, 0.16);
-          break;
-        case 'hit':
-          tone(160, 0.12, 'sawtooth', 0.06, 0, 90);
-          break;
-        case 'enemy_down':
-          tone(330, 0.1, 'triangle', 0.06, 0);
-          tone(520, 0.16, 'sine', 0.06, 0.06);
-          break;
-        case 'boss_roar':
-          tone(130, 0.35, 'sawtooth', 0.08, 0, 68);
-          break;
-        case 'quest_done':
-          tone(587, 0.14, 'triangle', 0.07, 0);
-          tone(784, 0.16, 'triangle', 0.07, 0.08);
-          tone(987, 0.26, 'sine', 0.07, 0.16);
-          break;
-        case 'levelup':
-          tone(523, 0.14, 'triangle', 0.07, 0);
-          tone(659, 0.14, 'triangle', 0.07, 0.09);
-          tone(784, 0.16, 'triangle', 0.07, 0.18);
-          tone(1046, 0.36, 'sine', 0.08, 0.28);
-          break;
-        case 'dialogue':
-          tone(440, 0.07, 'sine', 0.04, 0);
-          break;
+        case 'hit': tone(190, 0.12, 'triangle', 0.055, 0, 110); break;
         case 'choice':
-          tone(392, 0.16, 'sine', 0.06, 0);
-          tone(587, 0.24, 'triangle', 0.06, 0.09);
+          tone(440, 0.14, 'sine', 0.055, 0);
+          tone(659.25, 0.22, 'sine', 0.055, 0.08);
+          break;
+        case 'win':
+          tone(523.25, 0.14, 'triangle', 0.07, 0);
+          tone(659.25, 0.14, 'triangle', 0.07, 0.09);
+          tone(783.99, 0.16, 'triangle', 0.07, 0.18);
+          tone(1046.5, 0.36, 'sine', 0.08, 0.28);
+          break;
+        case 'fail':
+          tone(349.23, 0.18, 'triangle', 0.06, 0);
+          tone(261.63, 0.28, 'sine', 0.06, 0.14);
           break;
       }
     }

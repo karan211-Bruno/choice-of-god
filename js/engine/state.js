@@ -2,7 +2,7 @@
   'use strict';
   root.COG = root.COG || {};
 
-  var STORAGE_KEY = 'cog_save_v2';
+  var STORAGE_KEY = 'cog_save_v3';
 
   function cloneDefault() {
     return {
@@ -10,18 +10,13 @@
       sound: true,
       xp: 0,
       level: 1,
-      skillPoints: 1,
-      skillLevels: { nova: 1, beam: 1, grace: 1 },
-      equipped: { weapon: 'word_of_light', cloak: null, relic: null },
-      unlockedItems: ['word_of_light', 'staff_of_moses'],
-      activeGuideId: 'cherubim',
-      activeZoneId: 'eden',
-      completedQuests: {}, // { questId: true }
-      defeatedBosses: {},  // { bossId: true }
-      collectedNodes: {},  // { nodeId: true }
+      score: 0,
       stats: { faith: 10, wisdom: 10, mercy: 10 },
       edenRoute: 'undecided', // 'undecided' | 'preserved' | 'fallen'
-      score: 0
+      activeGuideId: 'cherubim',
+      activeStageId: 'eden',
+      completedStages: {}, // { stageId: { stars, bestScore } }
+      unlockedItems: ['word_of_light', 'staff_of_moses']
     };
   }
 
@@ -35,7 +30,7 @@
   }
 
   function xpForNext(lv) {
-    return 140 + (lv - 1) * 70;
+    return 150 + (lv - 1) * 75;
   }
 
   var State = {
@@ -48,12 +43,8 @@
           if (p && typeof p === 'object') {
             var base = cloneDefault();
             stateData = Object.assign(base, p);
-            stateData.skillLevels = Object.assign(base.skillLevels, p.skillLevels || {});
-            stateData.equipped = Object.assign(base.equipped, p.equipped || {});
             stateData.stats = Object.assign(base.stats, p.stats || {});
-            stateData.completedQuests = p.completedQuests || {};
-            stateData.defeatedBosses = p.defeatedBosses || {};
-            stateData.collectedNodes = p.collectedNodes || {};
+            stateData.completedStages = p.completedStages || {};
             stateData.unlockedItems = Array.isArray(p.unlockedItems) && p.unlockedItems.length
               ? p.unlockedItems : base.unlockedItems;
           }
@@ -82,20 +73,24 @@
       emit();
     },
 
-    get: function () {
-      return stateData;
-    },
-
-    getXpNeeded: function () {
-      return xpForNext(stateData.level);
-    },
-
-    getPlayerLevel: function () {
-      return stateData.level;
-    },
+    get: function () { return stateData; },
+    getXpNeeded: function () { return xpForNext(stateData.level); },
+    getPlayerLevel: function () { return stateData.level; },
 
     getTotalScore: function () {
-      return Number(stateData.score || 0) + (stateData.edenRoute === 'preserved' ? 5000 : 0);
+      var sum = Number(stateData.score || 0);
+      var keys = Object.keys(stateData.completedStages);
+      for (var i = 0; i < keys.length; i++) {
+        sum += Number(stateData.completedStages[keys[i]].bestScore || 0);
+      }
+      if (stateData.edenRoute === 'preserved') {
+        sum += 5000;
+      }
+      return sum;
+    },
+
+    getCompletedCount: function () {
+      return Object.keys(stateData.completedStages).length;
     },
 
     setLang: function (lang) {
@@ -110,8 +105,8 @@
       emit();
     },
 
-    setActiveZone: function (zoneId) {
-      stateData.activeZoneId = zoneId;
+    setActiveStage: function (stageId) {
+      stateData.activeStageId = stageId;
       this.save();
       emit();
     },
@@ -139,52 +134,27 @@
       return false;
     },
 
-    getDerivedStats: function () {
-      var maxHp = 120 + (stateData.level - 1) * 18;
-      var maxMp = 80 + (stateData.level - 1) * 10;
-      var atk = 18 + (stateData.level - 1) * 3;
-      var def = 3 + (stateData.level - 1) * 1;
-      var speed = 235;
-      var mpRegen = 4.5;
-      var scorePct = 0;
-
+    getPowerBonus: function () {
+      var g = this.getActiveGuide();
+      var atk = (g && g.buff && g.buff.atk) || 0;
+      var def = (g && g.buff && g.buff.def) || 0;
+      var hp = 0;
       var items = (root.COG.DATA && root.COG.DATA.ITEMS) || [];
-      ['weapon', 'cloak', 'relic'].forEach(function (slot) {
-        var id = stateData.equipped[slot];
-        if (!id) return;
+      stateData.unlockedItems.forEach(function (id) {
         var it = items.find(function (x) { return x.id === id; });
         if (it && it.stats) {
           atk += it.stats.atk || 0;
           def += it.stats.def || 0;
-          maxHp += it.stats.hp || 0;
-          maxMp += it.stats.mp || 0;
-          speed += it.stats.speed || 0;
+          hp += it.stats.hp || 0;
         }
       });
-
-      var guide = this.getActiveGuide();
-      if (guide && guide.buff) {
-        atk += guide.buff.atk || 0;
-        def += guide.buff.def || 0;
-        speed += guide.buff.speed || 0;
-        mpRegen += guide.buff.mpRegen || 0;
-        scorePct += guide.buff.scorePct || 0;
-      }
-
-      return { maxHp: maxHp, maxMp: maxMp, atk: atk, def: def, speed: speed, mpRegen: mpRegen, scorePct: scorePct };
+      return { atk: atk + (stateData.level - 1) * 3, def: def + (stateData.level - 1) * 1, hp: hp };
     },
 
     unlockItem: function (itemId) {
       if (!itemId) return false;
-      var items = (root.COG.DATA && root.COG.DATA.ITEMS) || [];
-      var item = items.find(function (i) { return i.id === itemId; });
-      if (!item) return false;
       if (stateData.unlockedItems.indexOf(itemId) === -1) {
         stateData.unlockedItems.push(itemId);
-        // Auto-equip if slot is empty or strictly stronger
-        if (!stateData.equipped[item.slot]) {
-          stateData.equipped[item.slot] = itemId;
-        }
         this.save();
         emit();
         return true;
@@ -192,114 +162,14 @@
       return false;
     },
 
-    equipItem: function (itemId) {
-      if (stateData.unlockedItems.indexOf(itemId) === -1) return false;
-      var items = (root.COG.DATA && root.COG.DATA.ITEMS) || [];
-      var item = items.find(function (i) { return i.id === itemId; });
-      if (!item) return false;
-      stateData.equipped[item.slot] = itemId;
+    addStat: function (delta) {
+      if (!delta) return;
+      if (delta.faith) stateData.stats.faith += delta.faith;
+      if (delta.wisdom) stateData.stats.wisdom += delta.wisdom;
+      if (delta.mercy) stateData.stats.mercy += delta.mercy;
+      if (delta.score) stateData.score += delta.score;
       this.save();
       emit();
-      return true;
-    },
-
-    upgradeSkill: function (skillId) {
-      var skills = (root.COG.DATA && root.COG.DATA.SKILLS) || [];
-      var sk = skills.find(function (s) { return s.id === skillId; });
-      if (!sk || stateData.skillPoints <= 0) return false;
-      var cur = stateData.skillLevels[skillId] || 1;
-      if (cur >= sk.maxLevel) return false;
-      stateData.skillLevels[skillId] = cur + 1;
-      stateData.skillPoints -= 1;
-      this.save();
-      emit();
-      return true;
-    },
-
-    addRewards: function (xpGain, scoreGain, statDelta) {
-      var guide = this.getActiveGuide();
-      var mult = 1 + ((guide && guide.buff && guide.buff.scorePct) || 0) / 100;
-      var finalScore = Math.round((scoreGain || 0) * mult);
-      stateData.score += finalScore;
-      stateData.xp += Number(xpGain || 0);
-
-      var prevLv = stateData.level;
-      var prevGuides = this.getUnlockedGuides().map(function (g) { return g.id; });
-
-      while (stateData.xp >= xpForNext(stateData.level) && stateData.level < 20) {
-        stateData.xp -= xpForNext(stateData.level);
-        stateData.level += 1;
-        stateData.skillPoints += 1;
-      }
-
-      if (statDelta) {
-        if (statDelta.faith) stateData.stats.faith += statDelta.faith;
-        if (statDelta.wisdom) stateData.stats.wisdom += statDelta.wisdom;
-        if (statDelta.mercy) stateData.stats.mercy += statDelta.mercy;
-      }
-
-      var newGuides = [];
-      if (stateData.level > prevLv) {
-        var nowGuides = this.getUnlockedGuides();
-        for (var i = 0; i < nowGuides.length; i++) {
-          if (prevGuides.indexOf(nowGuides[i].id) === -1) {
-            newGuides.push(nowGuides[i]);
-            stateData.activeGuideId = nowGuides[i].id;
-          }
-        }
-      }
-
-      this.save();
-      emit();
-      return {
-        leveledUp: stateData.level > prevLv,
-        newLevel: stateData.level,
-        newGuides: newGuides,
-        awardedScore: finalScore
-      };
-    },
-
-    markNodeCollected: function (nodeId) {
-      if (stateData.collectedNodes[nodeId]) return false;
-      stateData.collectedNodes[nodeId] = true;
-      this.save();
-      emit();
-      return true;
-    },
-
-    completeQuest: function (questObj) {
-      if (!questObj || stateData.completedQuests[questObj.id]) return null;
-      stateData.completedQuests[questObj.id] = true;
-      var res = this.addRewards(questObj.xp || 100, questObj.score || 300, { faith: 2 });
-      this.save();
-      emit();
-      return res;
-    },
-
-    defeatBoss: function (zoneObj) {
-      if (!zoneObj || !zoneObj.boss) return null;
-      var firstTime = !stateData.defeatedBosses[zoneObj.boss.id];
-      stateData.defeatedBosses[zoneObj.boss.id] = true;
-
-      if (zoneObj.id === 'eden' && stateData.edenRoute === 'undecided') {
-        stateData.edenRoute = 'preserved';
-      }
-
-      var itemToUnlock = zoneObj.id === 'eden' && stateData.edenRoute === 'fallen'
-        ? zoneObj.altRewardItem
-        : zoneObj.rewardItem;
-      var unlockedNewItem = this.unlockItem(itemToUnlock) ? itemToUnlock : null;
-
-      var qBoss = zoneObj.quests.find(function (q) { return q.type === 'boss'; });
-      if (qBoss) stateData.completedQuests[qBoss.id] = true;
-
-      var rewardRes = this.addRewards(
-        firstTime ? zoneObj.boss.xp : Math.round(zoneObj.boss.xp * 0.4),
-        firstTime ? zoneObj.boss.score : Math.round(zoneObj.boss.score * 0.35),
-        { faith: 5, wisdom: 3 }
-      );
-      rewardRes.unlockedItem = unlockedNewItem;
-      return rewardRes;
     },
 
     setEdenRoute: function (route) {
@@ -310,6 +180,66 @@
         this.save();
         emit();
       }
+    },
+
+    completeStage: function (stageObj, earnedScore, stars, extra) {
+      var prevLv = stateData.level;
+      var prevGuides = this.getUnlockedGuides().map(function (g) { return g.id; });
+      var prev = stateData.completedStages[stageObj.id];
+      var guide = this.getActiveGuide();
+      var mult = 1 + ((guide && guide.buff && guide.buff.scorePct) || 0) / 100;
+      var finalScore = Math.max(200, Math.round((earnedScore || stageObj.baseScore) * mult));
+      var cleanStars = Math.max(1, Math.min(3, stars || 1));
+
+      if (!prev) {
+        stateData.completedStages[stageObj.id] = { stars: cleanStars, bestScore: finalScore };
+        stateData.xp += Number(stageObj.xp || 220);
+      } else {
+        stateData.completedStages[stageObj.id] = {
+          stars: Math.max(prev.stars, cleanStars),
+          bestScore: Math.max(prev.bestScore, finalScore)
+        };
+        stateData.xp += Math.round(Number(stageObj.xp || 220) * 0.45);
+      }
+
+      while (stateData.xp >= xpForNext(stateData.level) && stateData.level < 20) {
+        stateData.xp -= xpForNext(stateData.level);
+        stateData.level += 1;
+      }
+
+      if (extra) {
+        if (extra.faith) stateData.stats.faith += extra.faith;
+        if (extra.wisdom) stateData.stats.wisdom += extra.wisdom;
+        if (extra.mercy) stateData.stats.mercy += extra.mercy;
+      }
+
+      var itemToGive = stageObj.id === 'eden' && stateData.edenRoute === 'fallen'
+        ? stageObj.altRewardItem
+        : stageObj.rewardItem;
+      var newItem = this.unlockItem(itemToGive) ? itemToGive : null;
+
+      var newGuides = [];
+      if (stateData.level > prevLv) {
+        var now = this.getUnlockedGuides();
+        for (var i = 0; i < now.length; i++) {
+          if (prevGuides.indexOf(now[i].id) === -1) {
+            newGuides.push(now[i]);
+            stateData.activeGuideId = now[i].id;
+          }
+        }
+      }
+
+      this.save();
+      emit();
+
+      return {
+        totalScore: this.getTotalScore(),
+        leveledUp: stateData.level > prevLv,
+        newLevel: stateData.level,
+        newItem: newItem,
+        newGuides: newGuides,
+        awardedScore: finalScore
+      };
     },
 
     onChange: function (fn) {

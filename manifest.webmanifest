@@ -1,12 +1,12 @@
 {
-  "name": "Choice of God - 신의 선택 (Action RPG)",
+  "name": "Choice of God - 신의 선택 (v3.0 Storybook Multi-Genre)",
   "short_name": "Choice of God",
-  "description": "Genesis & Exodus 2D Top-Down Action RPG Adventure (5 Languages)",
+  "description": "Genesis & Exodus Cute Storybook Multi-Genre RPG Adventure (5 Languages)",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0b132b",
-  "theme_color": "#0b132b",
+  "background_color": "#fef7e5",
+  "theme_color": "#fef7e5",
   "orientation": "any",
   "icons": [
     {

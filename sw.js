@@ -1,4 +1,4 @@
-const CACHE_NAME = 'choice-of-god-v2.0.0';
+const CACHE_NAME = 'choice-of-god-v3.0.0';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,12 @@ const CORE_ASSETS = [
   './icons/favicon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './assets/art/adam_eve.png',
+  './assets/art/noah.png',
+  './assets/art/abraham.png',
+  './assets/art/moses.png',
+  './assets/art/cherubim.png',
+  './assets/art/serpent.png',
   './js/i18n/ko.js',
   './js/i18n/en.js',
   './js/i18n/ja.js',
@@ -15,14 +21,19 @@ const CORE_ASSETS = [
   './js/data/bible.js',
   './js/data/guides.js',
   './js/data/items.js',
-  './js/data/skills.js',
-  './js/data/zones.js',
   './js/data/dialogues.js',
+  './js/data/stages.js',
   './js/engine/i18n.js',
   './js/engine/state.js',
   './js/engine/audio.js',
-  './js/engine/sprites.js',
-  './js/engine/rpgEngine.js',
+  './js/engine/chibiSprites.js',
+  './js/engine/stageHost.js',
+  './js/stages/stage1_eden_arpg.js',
+  './js/stages/stage2_ark_sim.js',
+  './js/stages/stage3_abraham_hex.js',
+  './js/stages/stage4_plagues_jrpg.js',
+  './js/stages/stage5_redsea_rts.js',
+  './js/stages/stage6_sinai_fps.js',
   './js/ui/dialogs.js',
   './js/app.js'
 ];

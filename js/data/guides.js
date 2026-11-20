@@ -9,35 +9,40 @@
       unlockLevel: 1,
       scriptureId: 'gen_3_24',
       color: '#f59e0b',
-      buff: { atk: 5, def: 2, speed: 0, mpRegen: 0.5, scorePct: 0 }
+      portrait: './assets/art/cherubim.png',
+      buff: { atk: 6, def: 2, scorePct: 0 }
     },
     {
       id: 'angel_lord',
-      unlockLevel: 3,
+      unlockLevel: 2,
       scriptureId: 'exod_3_2_5',
       color: '#fb7185',
-      buff: { atk: 9, def: 4, speed: 8, mpRegen: 1.4, scorePct: 5 }
+      portrait: './assets/art/moses.png',
+      buff: { atk: 10, def: 4, scorePct: 5 }
     },
     {
       id: 'pillar_fire',
-      unlockLevel: 5,
+      unlockLevel: 3,
       scriptureId: 'exod_13_21',
       color: '#38bdf8',
-      buff: { atk: 12, def: 7, speed: 18, mpRegen: 1.8, scorePct: 8 }
+      portrait: './assets/art/cherubim.png',
+      buff: { atk: 14, def: 6, scorePct: 10 }
     },
     {
       id: 'gabriel',
-      unlockLevel: 7,
+      unlockLevel: 4,
       scriptureId: 'dan_8_16',
       color: '#c084fc',
-      buff: { atk: 15, def: 9, speed: 20, mpRegen: 2.8, scorePct: 12 }
+      portrait: './assets/art/abraham.png',
+      buff: { atk: 18, def: 9, scorePct: 15 }
     },
     {
       id: 'michael',
-      unlockLevel: 10,
+      unlockLevel: 6,
       scriptureId: 'dan_10_13',
       color: '#facc15',
-      buff: { atk: 22, def: 14, speed: 25, mpRegen: 3.5, scorePct: 20 }
+      portrait: './assets/art/cherubim.png',
+      buff: { atk: 24, def: 14, scorePct: 22 }
     }
   ];
 
