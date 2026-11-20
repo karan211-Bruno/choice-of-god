@@ -106,14 +106,15 @@
     var frame = selectFrame(opts, t);
     var targetH = (opts.height || 92) * scale;
     var isRun = (opts.moving || opts.animState === 'run') && frame !== 3;
-    var bob = frame === 3 ? 4 : (isRun ? Math.abs(Math.sin(t * 14)) * 5 : Math.sin(t * 3.5) * 1.2);
+    var jumpY = opts.jumpY || 0;
+    var bob = jumpY + (frame === 3 ? 7 : (isRun ? Math.abs(Math.sin(t * 14)) * 9 : Math.sin(t * 4.2) * 1.5));
     var flipX = typeof opts.flipX === 'boolean'
       ? opts.flipX
       : (typeof opts.facingAngle === 'number' && Math.cos(opts.facingAngle) < -0.15);
     var squashY = frame === 3
-      ? 1.04
-      : (isRun ? (1 + Math.sin(t * 28) * 0.04) : (1 + Math.sin(t * 3.8) * 0.022));
-    var squashX = 1 / squashY;
+      ? 0.96
+      : (isRun ? (1 + Math.sin(t * 28) * 0.065) : (1 + Math.sin(t * 4.2) * 0.035));
+    var squashX = frame === 3 ? 1.07 : (1 / squashY);
     var alpha = (opts.invuln > 0 && Math.floor(t * 16) % 2 === 0) ? 0.52 : 1;
 
     var drawOpts = {
@@ -123,8 +124,9 @@
       flipX: flipX,
       squashX: squashX,
       squashY: squashY,
-      rot: opts.rot || (isRun ? Math.sin(t * 14) * 0.045 : 0),
+      rot: opts.rot || (isRun ? Math.sin(t * 14) * 0.085 : 0),
       alpha: alpha,
+      shadowY: 2,
       hitFlash: opts.hitFlash,
       glowColor: opts.glowColor
     };
@@ -319,11 +321,17 @@
     var targetH = (opts.height || (isBoss ? 104 : 88)) * scale;
     var dx = opts.lungeX || 0;
     var frame = selectFrame(opts, t);
+    var jumpY = opts.jumpY || 0;
+    var isRun = (opts.moving || opts.animState === 'run') && frame !== 3;
+    var bob = jumpY + (frame === 3 ? 7 : (isRun ? Math.abs(Math.sin(t * 14)) * 8 : 0));
 
     var rendered = Sp && Sp.drawAnimFrame && Sp.drawAnimFrame(ctx, key + '_sheet', frame, x + dx, y, {
       height: targetH,
       anchorY: 0.94,
-      squashY: 1 + Math.sin(t * 3.6 + (isBoss ? 0 : 1.2)) * 0.028,
+      bob: bob,
+      rot: isRun ? Math.sin(t * 14) * 0.075 : 0,
+      squashX: frame === 3 ? 1.07 : 1,
+      squashY: frame === 3 ? 0.96 : (1 + Math.sin(t * 3.8 + (isBoss ? 0 : 1.2)) * 0.032),
       flipX: opts.flipX,
       hitFlash: opts.hitFlash,
       glowColor: opts.glowColor || (isBoss ? 'rgba(251, 191, 36, 0.34)' : null)

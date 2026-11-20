@@ -10,7 +10,7 @@
     appTitle: 'Choice of God · 신의 선택',
     appSubtitle: '동화풍 성경 멀티 장르 어드벤처 RPG (창세기 · 출애굽기)',
     appTagline: '스테이지마다 장르가 변하는 반짝이는 성경 동화 모험! 귀여운 영웅들과 함께 하나님의 선택을 그려 보세요.',
-    metaTitle: 'Choice of God v3.0 (신의 선택) — 동화풍 멀티 장르 성경 RPG',
+    metaTitle: 'Choice of God v5.1 (신의 선택) — 애니메이션 멀티 장르 성경 RPG',
     ui: {
       galleryTitle: '시점 · 스테이지 자유 선택 (각 스테이지 = 새로운 장르!)',
       galleryHint: '원하는 캐릭터와 성경 이야기를 언제든 자유롭게 고르세요! 1장 에덴동산을 끝까지 지켜내면 최고 보너스(+5,000점)를 얻습니다.',
@@ -129,8 +129,9 @@
     stageUi: {
       eden: {
         stars: '창조의 별', bossHp: '꼬마 대마왕 뱀', hearts: '하트', combo: '콤보',
+        autoOn: '🤖 자동 전투: ON', autoOff: '🎮 자동 전투: OFF',
         skills: { spin: '🌀 빛의 회오리 (Q)', angelBurst: '✨ 천사 광선 + 회복 (R)' },
-        hint: 'WASD/방향키 이동 · Space/클릭 3연속 콤보 · Shift 구르기 · Q/R 스킬 · E 대화'
+        hint: '클릭한 곳으로 달려가 별 줍기·대화·자동 콤보! WASD 이동 · Q/R 스킬 · Shift 회피'
       },
       ark: {
         timber: '고페르 목재', pitch: '역청', animals: '탑승 동물', arkProg: '방주 완성도',

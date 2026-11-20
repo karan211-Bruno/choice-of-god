@@ -10,7 +10,7 @@
     appTitle: 'Choice of God · Elección de Dios',
     appSubtitle: 'Aventura RPG Multigénero Ilustrada (Génesis y Éxodo)',
     appTagline: '¡Un cuento ilustrado bíblico donde cada etapa cambia completamente de género de juego!',
-    metaTitle: 'Choice of God v3.0 — Cuento RPG Multigénero',
+    metaTitle: 'Choice of God v5.1 — RPG Animado Multigénero',
     ui: {
       galleryTitle: 'Elige Libremente Tu Historia y Género',
       galleryHint: '¡Escoge cualquier héroe y etapa en el orden que prefieras! Proteger el Edén en la Etapa 1 otorga +5,000 puntos.',
@@ -124,8 +124,9 @@
     stageUi: {
       eden: {
         stars: 'Estrellas', bossHp: 'Serpiente Chibi Jefe', hearts: 'Corazones', combo: 'Combo',
+        autoOn: '🤖 Auto-Acción: ON', autoOff: '🎮 Auto-Acción: OFF',
         skills: { spin: '🌀 Giro Radiante (Q)', angelBurst: '✨ Rayo Ángel + Cura (R)' },
-        hint: 'WASD/Flechas: Mover · Espacio/Clic: Combo x3 · Shift: Rodar · Q/R: Skills · E: Hablar'
+        hint: '¡Haz clic en cualquier punto para correr, hablar o atacar! WASD/Flechas · Q/R Skills'
       },
       ark: {
         timber: 'Madera Gofer', pitch: 'Brea', animals: 'Crías A Bordo', arkProg: 'Progreso del Arca',

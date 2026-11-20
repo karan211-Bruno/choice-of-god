@@ -55,25 +55,28 @@
       var wood = 4;
       var pitch = 2;
       var arkProgress = 0;
+      var arkBob = 0;
       var selectedTool = 'mill';
       var hoverCell = null;
       var time = 0;
       var tickAcc = 0;
       var eventCd = 9.0;
       var rainTimer = 0;
+      var idlePatrolCd = 1.6;
       var driftwood = null;
       var babyAnimals = [];
       var animalKinds = ['sheep', 'lion', 'dove'];
 
       var noah = {
         x: 155, y: 325, tx: 155, ty: 325,
-        speed: 380, moving: false, flipX: false, attackTimer: 0, dustCd: 0, pending: null
+        speed: 460, moving: false, flipX: false, hammerTimer: 0, dustCd: 0, pending: null
       };
 
       function executePlotAction(c, r, pos) {
         var existing = grid[r][c];
-        noah.attackTimer = 0.45;
+        noah.hammerTimer = 0.65;
         noah.flipX = pos.x < noah.x;
+        idlePatrolCd = 2.0;
 
         if (!existing) {
           if (selectedTool === 'mill') {
@@ -81,7 +84,7 @@
             wood += 2;
             host.sfx('chime');
             host.shake(4, 0.14);
-            vfx.spawnBurst(pos.x, pos.y - 8, '#fde047', 10);
+            vfx.spawnBurst(pos.x, pos.y - 8, '#fde047', 12);
             vfx.spawnOrb(pos.x, pos.y - 16, 480, 105, '#fde047', 0.5);
             vfx.addPopup(pos.x, pos.y - 32, '+2 Wood', '#fde047', 1.0);
           } else if (selectedTool === 'well' && wood >= 3) {
@@ -90,17 +93,17 @@
             pitch += 2;
             host.sfx('chime');
             host.shake(4, 0.14);
-            vfx.spawnBurst(pos.x, pos.y - 8, '#7dd3fc', 10);
+            vfx.spawnBurst(pos.x, pos.y - 8, '#7dd3fc', 12);
             vfx.spawnOrb(pos.x, pos.y - 16, 480, 105, '#7dd3fc', 0.5);
             vfx.addPopup(pos.x, pos.y - 32, '+2 Pitch', '#7dd3fc', 1.0);
           } else if (selectedTool === 'pen' && wood >= 4) {
             wood -= 4;
             grid[r][c] = { type: 'pen', lv: 1, bob: 1 };
             var kind = animalKinds[babyAnimals.length % animalKinds.length];
-            babyAnimals.push({ kind: kind, x: pos.x, y: pos.y, tx: 480, ty: 122, wanderAngle: Math.random() * 6 });
+            babyAnimals.push({ kind: kind, x: pos.x, y: pos.y, tx: 480, ty: 122 });
             host.sfx('magic');
             host.shake(4, 0.14);
-            vfx.spawnBurst(pos.x, pos.y - 8, '#fbbf24', 10);
+            vfx.spawnBurst(pos.x, pos.y - 8, '#fbbf24', 12);
             vfx.addPopup(pos.x, pos.y - 32, '+Animal!', '#bbf7d0', 1.08);
           } else {
             host.sfx('hit');
@@ -131,7 +134,7 @@
             vfx.addPopup(pos.x, pos.y - 54, 'Lv.' + existing.lv + ' UP!', '#4ade80', 1.2);
           } else {
             host.sfx('click');
-            vfx.spawnBurst(pos.x, pos.y - 12, '#fde047', 6);
+            vfx.spawnBurst(pos.x, pos.y - 12, '#fde047', 8);
           }
         }
       }
@@ -148,26 +151,17 @@
         for (var i = 0; i < all.length; i++) {
           all[i].addEventListener('click', function () {
             var tool = this.getAttribute('data-tool');
+            this.blur();
             if (tool === 'buildArk') {
               if (wood >= 6 && pitch >= 4) {
                 wood -= 6;
                 pitch -= 4;
-                arkProgress = Math.min(100, arkProgress + 25);
-                noah.attackTimer = 0.5;
-                noah.flipX = false;
-                host.sfx('magic');
-                host.shake(6, 0.22);
-                vfx.spawnOrb(noah.x, noah.y - 30, 480, 96, '#fde047', 0.45);
-                vfx.spawnRing(480, 100, '#fde047', 110, 0.55);
-                vfx.spawnBurst(480, 96, '#fde047', 16, 150);
-                vfx.addPopup(480, 68, '+25% Ark!', '#fde047', 1.25);
-                if (arkProgress >= 100) {
-                  host.sfx('win');
-                  host.win(stageObj.baseScore + babyAnimals.length * 100, 3, {
-                    faith: 6, wisdom: 6,
-                    customSummary: host.t('stages.ark.outro')
-                  });
-                }
+                // Noah sprints right up to the Ark dock and hammers it!
+                noah.tx = 420;
+                noah.ty = 165;
+                noah.pending = { kind: 'buildArk' };
+                idlePatrolCd = 2.4;
+                host.sfx('click');
               } else {
                 host.sfx('hit');
               }
@@ -186,7 +180,7 @@
       });
 
       host.onPointer('pointerdown', function (x, y) {
-        // Clickable Driftwood bonus crate on the beach!
+        idlePatrolCd = 2.5;
         if (driftwood && Math.hypot(x - driftwood.x, y - driftwood.y) < 52) {
           noah.tx = driftwood.x + 28;
           noah.ty = driftwood.y;
@@ -195,7 +189,13 @@
           return;
         }
         var hit = screenToIso(x, y);
-        if (!hit) return;
+        if (!hit) {
+          // Clicking open meadow still moves Noah briskly there!
+          noah.tx = Math.max(90, Math.min(W - 90, x));
+          noah.ty = Math.max(150, Math.min(H - 60, y));
+          noah.pending = null;
+          return;
+        }
         var pos = isoToScreen(hit.c, hit.r);
         noah.tx = pos.x - 24;
         noah.ty = pos.y + 10;
@@ -205,9 +205,9 @@
       host.onUpdate(function (dt) {
         time += dt;
         tickAcc += dt;
-        if (noah.attackTimer > 0) noah.attackTimer = Math.max(0, noah.attackTimer - dt);
+        if (noah.hammerTimer > 0) noah.hammerTimer = Math.max(0, noah.hammerTimer - dt);
+        if (arkBob > 0) arkBob = Math.max(0, arkBob - dt * 2.4);
 
-        // Noah sprint movement toward target task
         var dx = noah.tx - noah.x;
         var dy = noah.ty - noah.y;
         var distToTarget = Math.hypot(dx, dy);
@@ -219,7 +219,7 @@
           noah.y += (dy / distToTarget) * step;
           noah.dustCd -= dt;
           if (noah.dustCd <= 0) {
-            noah.dustCd = 0.14;
+            noah.dustCd = 0.12;
             vfx.spawnDust(noah.x, noah.y + 6, 2);
           }
         } else {
@@ -229,18 +229,69 @@
             noah.pending = null;
             if (task.kind === 'driftwood' && driftwood) {
               wood += 4;
-              noah.attackTimer = 0.4;
+              noah.hammerTimer = 0.5;
               host.sfx('chime');
               vfx.spawnBurst(driftwood.x, driftwood.y, '#fde047', 12);
               vfx.addPopup(driftwood.x, driftwood.y - 24, uiT().driftwood, '#fde047', 1.15);
               driftwood = null;
+            } else if (task.kind === 'buildArk') {
+              arkProgress = Math.min(100, arkProgress + 25);
+              arkBob = 1;
+              noah.hammerTimer = 0.65;
+              noah.flipX = false;
+              host.sfx('magic');
+              host.shake(7, 0.24);
+              vfx.spawnRing(480, 100, '#fde047', 120, 0.55);
+              vfx.spawnBurst(480, 96, '#fde047', 18, 160);
+              vfx.addPopup(480, 68, '+25% Ark!', '#fde047', 1.25);
+              if (arkProgress >= 100) {
+                host.sfx('win');
+                host.win(stageObj.baseScore + babyAnimals.length * 100, 3, {
+                  faith: 6, wisdom: 6,
+                  customSummary: host.t('stages.ark.outro')
+                });
+                return;
+              }
+            } else if (task.kind === 'patrolInspect' && grid[task.r][task.c]) {
+              var pb = grid[task.r][task.c];
+              pb.bob = 0.8;
+              noah.hammerTimer = 0.45;
+              if (pb.type === 'well') {
+                pitch += 1;
+                vfx.addPopup(task.pos.x, task.pos.y - 26, '+1 Pitch', '#7dd3fc', 0.95);
+              } else {
+                wood += 1;
+                vfx.addPopup(task.pos.x, task.pos.y - 26, '+1 Wood', '#fde047', 0.95);
+              }
+              vfx.spawnBurst(task.pos.x, task.pos.y - 12, '#fde047', 6);
             } else if (task.kind === 'plot') {
               executePlotAction(task.c, task.r, task.pos);
+            }
+          } else {
+            // Autonomous busy Craftsman Patrol between buildings!
+            idlePatrolCd -= dt;
+            if (idlePatrolCd <= 0) {
+              idlePatrolCd = 2.6;
+              var builtList = [];
+              for (var r3 = 0; r3 < ROWS; r3++) {
+                for (var c3 = 0; c3 < COLS; c3++) {
+                  if (grid[r3][c3]) builtList.push({ r: r3, c: c3 });
+                }
+              }
+              if (builtList.length > 0) {
+                var pick = builtList[Math.floor(Math.random() * builtList.length)];
+                var pp = isoToScreen(pick.c, pick.r);
+                noah.tx = pp.x - 24;
+                noah.ty = pp.y + 10;
+                noah.pending = { kind: 'patrolInspect', r: pick.r, c: pick.c, pos: pp };
+              } else {
+                noah.tx = noah.x < 300 ? 410 : 155;
+                noah.ty = 315;
+              }
             }
           }
         }
 
-        // Dynamic Raincloud & Driftwood island events
         if (rainTimer > 0) rainTimer = Math.max(0, rainTimer - dt);
         eventCd -= dt;
         if (eventCd <= 0) {
@@ -293,7 +344,6 @@
           ctx.fillRect(0, 0, W, H);
         }
 
-        // Animated shoreline wave ripples
         ctx.save();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.lineWidth = 3;
@@ -307,7 +357,6 @@
         }
         ctx.restore();
 
-        // Blessing Rain streaks
         if (rainTimer > 0) {
           ctx.save();
           ctx.strokeStyle = 'rgba(186, 230, 253, 0.62)';
@@ -320,7 +369,6 @@
           ctx.restore();
         }
 
-        // Rainbow growing with Ark
         if (arkProgress > 0) {
           var cols = ['#fb7185', '#fdba74', '#fde047', '#4ade80', '#60a5fa', '#c084fc'];
           ctx.save();
@@ -335,6 +383,7 @@
         S.drawBuilding(ctx, 'ark', 480, 128, {
           height: 112 + (arkProgress / 100) * 24,
           anchorY: 0.85,
+          bob: arkBob,
           glowColor: arkProgress >= 50 ? 'rgba(253, 224, 71, 0.45)' : null
         }, time);
         if (Sp && Sp.drawGlossyBar) {
@@ -342,7 +391,6 @@
         }
         drawStrokeText(ctx, arkProgress + '%', 480, 158, '#fde047', '900 13px sans-serif');
 
-        // 2.5D Isometric Diamond Grid + Buildings in painter order
         for (var sum = 0; sum <= COLS + ROWS - 2; sum++) {
           for (var r = 0; r < ROWS; r++) {
             var c = sum - r;
@@ -378,7 +426,6 @@
           }
         }
 
-        // Clickable Driftwood bundle on sandy shore
         if (driftwood) {
           var dbob = Math.sin(time * 4) * 3;
           ctx.save();
@@ -392,11 +439,13 @@
 
         vfx.renderBack(ctx);
 
+        var hammerJump = noah.hammerTimer > 0 ? Math.abs(Math.sin(noah.hammerTimer * 18)) * 14 : 0;
         S.drawChibiHero(ctx, noah.x, noah.y + 8, {
           kind: 'noah',
           moving: noah.moving,
           flipX: noah.flipX,
-          attackTimer: noah.attackTimer,
+          jumpY: hammerJump,
+          attackTimer: noah.hammerTimer,
           height: 94,
           lv: root.COG.State.getPlayerLevel()
         }, time);

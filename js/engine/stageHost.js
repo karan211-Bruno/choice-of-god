@@ -139,6 +139,10 @@
       activeMeta = stageObj;
       activeCallbacks = callbacks || {};
 
+      if (typeof document !== 'undefined' && document.activeElement && document.activeElement.tagName === 'BUTTON') {
+        try { document.activeElement.blur(); } catch (_) {}
+      }
+
       var mod = (root.COG.STAGES || {})[stageObj.id];
       if (!mod || typeof mod.start !== 'function') return;
 
@@ -202,6 +206,9 @@
           if (!canvasEl) return;
           var h = function (e) {
             if (paused) return;
+            if (type === 'pointerdown' && typeof document !== 'undefined' && document.activeElement && document.activeElement.tagName === 'BUTTON') {
+              try { document.activeElement.blur(); } catch (_) {}
+            }
             var r = canvasEl.getBoundingClientRect();
             var x = (e.clientX - r.left) * (WIDTH / r.width);
             var y = (e.clientY - r.top) * (HEIGHT / r.height);

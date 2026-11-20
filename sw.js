@@ -1,4 +1,4 @@
-const CACHE_NAME = 'choice-of-god-v5.0.0';
+const CACHE_NAME = 'choice-of-god-v5.1.0';
 const CORE_ASSETS = [
   './',
   './index.html',

@@ -173,4 +173,4 @@ assert(State.getPlayerLevel() >= 6, `Expected Lv >= 6, got ${State.getPlayerLeve
 assert.strictEqual(State.getUnlockedGuides().length, 5, 'Expected all 5 cute companions unlocked');
 
 console.log('   OK (All state & progression checks passed)');
-console.log('ALL v5.0 4-FRAME ANIMATION & GAMEPLAY VERIFICATION CHECKS PASSED!');
+console.log('ALL v5.1 CLICK-TO-MOVE & 4-FRAME ANIMATION CHECKS PASSED!');

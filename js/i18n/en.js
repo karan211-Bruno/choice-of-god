@@ -10,7 +10,7 @@
     appTitle: 'Choice of God',
     appSubtitle: 'Cute Storybook Multi-Genre RPG Adventure (Genesis & Exodus)',
     appTagline: 'A sparkling Bible picture-book adventure where every stage transforms into a brand-new genre!',
-    metaTitle: 'Choice of God v3.0 — Cute Storybook Multi-Genre RPG',
+    metaTitle: 'Choice of God v5.1 — Animated SD Multi-Genre Bible RPG',
     ui: {
       galleryTitle: 'Choose Your Story & Genre Freely',
       galleryHint: 'Pick any hero and biblical stage in any order! Guarding Eden through Stage 1 awards the highest +5,000 Crown Bonus.',
@@ -124,8 +124,9 @@
     stageUi: {
       eden: {
         stars: 'Stars', bossHp: 'Chibi Serpent Boss', hearts: 'Hearts', combo: 'Combo',
+        autoOn: '🤖 Auto-Action: ON', autoOff: '🎮 Auto-Action: OFF',
         skills: { spin: '🌀 Radiant Spin (Q)', angelBurst: '✨ Angel Burst + Heal (R)' },
-        hint: 'WASD/Arrows: Move · Space/Click: 3-Hit Combo · Shift: Dash · Q/R: Skills · E: Talk'
+        hint: 'Click anywhere to run, talk & attack! Or use WASD/Arrows · Space Combo · Q/R Skills'
       },
       ark: {
         timber: 'Gopher Wood', pitch: 'Pitch', animals: 'Baby Animals', arkProg: 'Ark Progress',

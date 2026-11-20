@@ -12,19 +12,22 @@
       var uiT = function () { return host.pack().stageUi.sinai; };
 
       var aim = { x: W / 2, y: H / 2 };
+      var mosesX = W / 2;
+      var mosesMoving = false;
+      var mosesCastTimer = 0;
+      var angelAtkTimer = 0;
       var mannaGot = 0;
       var shadowsPurified = 0;
       var combo = 0;
       var timeLeft = 45;
       var time = 0;
-      var recoil = 0;
       var sunburstCd = 0;
       var sunburstSweepX = -1;
       var calfChoiceDone = false;
 
       var targets = [];
       var bolts = [];
-      var guardianBoss = null; // Spawns at 4 shadows purified!
+      var guardianBoss = null;
       var spawnCd = 0.6;
 
       function renderToolbar() {
@@ -34,17 +37,23 @@
         var tb = host.setToolbar('<div class="sim-toolbar"><button type="button" class="btn-primary-gold" data-sk="sun"' + dis + '>' + lbl + '</button></div>');
         if (!tb) return;
         var btn = tb.querySelector('[data-sk="sun"]');
-        if (btn) btn.addEventListener('click', triggerSunburst);
+        if (btn) {
+          btn.addEventListener('click', function () {
+            this.blur();
+            triggerSunburst();
+          });
+        }
       }
 
       function triggerSunburst() {
         if (sunburstCd > 0) return;
         sunburstCd = 9.0;
-        recoil = 1;
+        mosesCastTimer = 0.55;
+        angelAtkTimer = 0.55;
         sunburstSweepX = 0;
         host.sfx('magic');
         host.shake(10, 0.35);
-        vfx.spawnRing(480, 260, '#fde047', 160, 0.5);
+        vfx.spawnRing(mosesX, 460, '#fde047', 130, 0.5);
 
         for (var i = targets.length - 1; i >= 0; i--) {
           if (targets[i].kind === 'shadow') {
@@ -99,8 +108,14 @@
 
       function fireBolt() {
         host.sfx('magic');
-        recoil = 1;
-        var sx = W - 180, sy = H - 70;
+        mosesCastTimer = 0.34;
+        if (combo >= 4) angelAtkTimer = 0.34;
+        var flipLeft = aim.x < mosesX;
+        var sx = mosesX + (flipLeft ? -42 : 42);
+        var sy = 435;
+        vfx.spawnRing(sx, sy, '#fde047', 38, 0.25);
+        vfx.spawnBurst(sx, sy, '#fef08a', 6, 80);
+
         var baseA = Math.atan2(aim.y - sy, aim.x - sx);
         var spread = combo >= 4 ? [-0.15, 0, 0.15] : [0];
         spread.forEach(function (off) {
@@ -114,7 +129,9 @@
       host.onUpdate(function (dt, keys) {
         time += dt;
         timeLeft -= dt;
-        if (recoil > 0) recoil = Math.max(0, recoil - dt * 5.5);
+        if (mosesCastTimer > 0) mosesCastTimer = Math.max(0, mosesCastTimer - dt);
+        if (angelAtkTimer > 0) angelAtkTimer = Math.max(0, angelAtkTimer - dt);
+
         var prevReady = sunburstCd <= 0;
         if (sunburstCd > 0) sunburstCd = Math.max(0, sunburstCd - dt);
         if (Math.floor((sunburstCd + dt) * 2) !== Math.floor(sunburstCd * 2) || (!prevReady && sunburstCd <= 0)) {
@@ -131,6 +148,16 @@
         if (keys.down) aim.y += 330 * dt;
         aim.x = Math.max(40, Math.min(W - 40, aim.x));
         aim.y = Math.max(40, Math.min(H - 60, aim.y));
+
+        // Visible animated Moses shifts horizontally to track aim smoothly!
+        var desiredMosesX = Math.max(380, Math.min(580, 480 + (aim.x - W * 0.5) * 0.28));
+        var mdx = desiredMosesX - mosesX;
+        if (Math.abs(mdx) > 3) {
+          mosesX += mdx * Math.min(1, dt * 8);
+          mosesMoving = true;
+        } else {
+          mosesMoving = false;
+        }
 
         if (host.consumeAction()) fireBolt();
 
@@ -244,7 +271,7 @@
           ctx.fillRect(0, 0, W, H);
         }
 
-        S.drawBuilding(ctx, 'tabernacle', 480, 415, {
+        S.drawBuilding(ctx, 'tabernacle', 480, 395, {
           height: 138,
           anchorY: 0.85,
           glowColor: 'rgba(250, 204, 21, 0.45)',
@@ -292,20 +319,22 @@
 
         vfx.renderFront(ctx);
 
-        // First-person Golden Shepherd Staff with recoil
-        var sx = W - 150, sy = H + 20;
-        var ang = Math.atan2(aim.y - sy, aim.x - sx);
-        ctx.save();
-        ctx.translate(sx, sy);
-        ctx.rotate(ang);
-        ctx.translate(-recoil * 18, 0);
-        ctx.fillStyle = '#b45309'; ctx.strokeStyle = S.INK; ctx.lineWidth = 3;
-        S.roundRect(ctx, 0, -9, 175, 18, 8); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = 'rgba(253, 224, 71, 0.4)';
-        ctx.beginPath(); ctx.arc(178, 0, 28, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fde047';
-        ctx.beginPath(); ctx.arc(178, 0, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.restore();
+        // Animated full-body Foreground Moses & Companion Angel aiming/casting!
+        var mosesFlip = aim.x < mosesX;
+        var castJump = mosesCastTimer > 0 ? Math.sin((mosesCastTimer / 0.34) * Math.PI) * 12 : 0;
+        S.drawChibiHero(ctx, mosesX, 526, {
+          kind: 'moses',
+          height: 128,
+          moving: mosesMoving,
+          flipX: mosesFlip,
+          jumpY: castJump,
+          attackTimer: mosesCastTimer,
+          lv: root.COG.State.getPlayerLevel()
+        }, time);
+        S.drawCuteAngel(ctx, mosesX - 66, 488, '#38bdf8', time, 0.85, {
+          attackTimer: angelAtkTimer,
+          flipX: mosesFlip
+        });
 
         // Crosshair
         ctx.save();

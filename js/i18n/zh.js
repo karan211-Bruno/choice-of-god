@@ -10,7 +10,7 @@
     appTitle: 'Choice of God · 神的选择',
     appSubtitle: '绘本风圣经多类型冒险RPG（创世记·出埃及记）',
     appTagline: '每一关都会切换全新游戏类型的闪亮圣经绘本冒险！和可爱的小英雄们一起绘出神的心意。',
-    metaTitle: 'Choice of God v3.0 (神的选择) — 绘本风多类型圣经RPG',
+    metaTitle: 'Choice of God v5.1 (神的选择) — 4帧动画多类型圣经RPG',
     ui: {
       galleryTitle: '自由选择视角与关卡（每一关 = 全新类型！）',
       galleryHint: '随时按任意顺序挑选喜欢的主角与圣经故事！守护第一章伊甸园到底可获得最高 +5,000 分皇冠奖励。',
@@ -124,8 +124,9 @@
     stageUi: {
       eden: {
         stars: '创造之星', bossHp: '小魔王顽皮蛇', hearts: '爱心', combo: '连击',
+        autoOn: '🤖 自动战斗: ON', autoOff: '🎮 自动战斗: OFF',
         skills: { spin: '🌀 光剑旋风斩 (Q)', angelBurst: '✨ 天使光束+治疗 (R)' },
-        hint: 'WASD/方向键移动 · 空格/点击3段连击 · Shift翻滚 · Q/R技能 · E对话'
+        hint: '点击地图任意位置即可奔跑拾星·对话·自动连击！也可用WASD移动 · Q/R技能'
       },
       ark: {
         timber: '歌斐木', pitch: '松香', animals: '登舟小动物', arkProg: '方舟进度',

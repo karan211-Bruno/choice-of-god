@@ -48,6 +48,7 @@
         var lb = tb.querySelectorAll('[data-lane]');
         for (var i = 0; i < lb.length; i++) {
           lb[i].addEventListener('click', function () {
+            this.blur();
             selectedLane = Number(this.getAttribute('data-lane'));
             host.sfx('click');
             renderToolbar();
@@ -56,6 +57,7 @@
         var ub = tb.querySelectorAll('[data-unit]');
         for (var j = 0; j < ub.length; j++) {
           ub[j].addEventListener('click', function () {
+            this.blur();
             summon(this.getAttribute('data-unit'));
           });
         }
@@ -65,8 +67,8 @@
         var u = uiT().units.find(function (x) { return x.id === unitId; });
         if (!u || mana < u.cost) { host.sfx('hit'); return; }
         mana -= u.cost;
-        mosesCastTimer = 0.45;
-        vfx.spawnRing(66, 290, '#fde047', 65, 0.35);
+        mosesCastTimer = 0.5;
+        vfx.spawnRing(74, 290, '#fde047', 75, 0.38);
 
         if (unitId === 'wave') {
           waveAnim = 1.0;
@@ -75,6 +77,7 @@
           for (var i = foes.length - 1; i >= 0; i--) {
             foes[i].hp -= (52 + bonus.atk);
             foes[i].hitFlash = 0.22;
+            foes[i].recoilX = 28;
             foes[i].x += 105;
             vfx.spawnBurst(foes[i].x, lanesY[foes[i].lane], '#7dd3fc', 10, 120);
             if (foes[i].hp <= 0) { foes.splice(i, 1); enemiesDefeated++; }
@@ -84,7 +87,8 @@
           return;
         }
         host.sfx('chime');
-        vfx.spawnBurst(132, lanesY[selectedLane], '#fde047', 8, 90);
+        vfx.spawnRing(132, lanesY[selectedLane] + 10, '#fde047', 55, 0.38);
+        vfx.spawnBurst(132, lanesY[selectedLane], '#fde047', 10, 110);
         allies.push({
           kind: unitId,
           lane: selectedLane,
@@ -95,6 +99,8 @@
           spd: unitId === 'miriam' ? 38 : 66,
           cd: 0,
           atkTimer: 0,
+          lungeX: 0,
+          dropY: 56,
           dustCd: 0
         });
       }
@@ -152,22 +158,25 @@
               cd: 0,
               spearCd: 1.8,
               hitFlash: 0,
+              recoilX: 0,
               dustCd: 0
             });
           }
         }
 
-        // Update allies (4-frame walk & active combat Attack frame!)
+        // Update allies with spring lunge + drop-in bounce
         for (var ai = allies.length - 1; ai >= 0; ai--) {
           var a = allies[ai];
           if (a.cd > 0) a.cd -= dt;
           if (a.atkTimer > 0) a.atkTimer = Math.max(0, a.atkTimer - dt);
+          if (a.lungeX > 0) a.lungeX = Math.max(0, a.lungeX - dt * 120);
+          if (a.dropY > 0) a.dropY = Math.max(0, a.dropY - dt * 260);
 
           if (a.kind === 'miriam' && a.cd <= 0) {
             a.cd = 1.6;
-            a.atkTimer = 0.45;
+            a.atkTimer = 0.48;
             vfx.spawnRing(a.x, lanesY[a.lane], '#fde047', 65, 0.42);
-            vfx.addPopup(a.x, lanesY[a.lane] - 42, '♪ HEAL', '#4ade80', 0.9);
+            vfx.addPopup(a.x, lanesY[a.lane] - 42, '♪ HEAL', '#4ade80', 0.95);
             allies.forEach(function (other) { other.hp = Math.min(other.maxHp, other.hp + 12); });
           }
 
@@ -178,13 +187,15 @@
               blocked = true;
               if (a.cd <= 0) {
                 a.cd = 0.62;
-                a.atkTimer = 0.34;
+                a.atkTimer = 0.36;
+                a.lungeX = 26;
                 f.hp -= a.atk;
                 f.hitFlash = 0.16;
+                f.recoilX = 18;
                 if (a.kind === 'knight') f.x += 18;
                 host.sfx('slash');
-                vfx.spawnBurst(f.x - 10, lanesY[f.lane], '#fde047', 7, 100);
-                vfx.addPopup(f.x, lanesY[f.lane] - 32, '-' + a.atk, '#fde047', 0.92);
+                vfx.spawnBurst(f.x - 10, lanesY[f.lane], '#fde047', 8, 110);
+                vfx.addPopup(f.x, lanesY[f.lane] - 32, '-' + a.atk, '#fde047', 0.95);
                 if (f.hp <= 0) {
                   vfx.spawnBurst(f.x, lanesY[f.lane], '#fbbf24', 14, 140);
                   foes.splice(fi, 1);
@@ -199,18 +210,19 @@
             a.x += a.spd * dt;
             a.dustCd -= dt;
             if (a.dustCd <= 0) {
-              a.dustCd = 0.25;
+              a.dustCd = 0.22;
               vfx.spawnDust(a.x, lanesY[a.lane] + 16, 1);
             }
           }
         }
 
-        // Update foes & hurled Bronze Spears
+        // Update foes with spring recoil
         for (var i = foes.length - 1; i >= 0; i--) {
           var e = foes[i];
           if (e.cd > 0) e.cd -= dt;
           if (e.spearCd > 0) e.spearCd -= dt;
           if (e.hitFlash > 0) e.hitFlash = Math.max(0, e.hitFlash - dt);
+          if (e.recoilX > 0) e.recoilX = Math.max(0, e.recoilX - dt * 95);
 
           var hitAlly = allies.find(function (al) { return al.lane === e.lane && Math.abs(al.x - e.x) < 52; });
           if (hitAlly) {
@@ -301,10 +313,12 @@
 
         vfx.renderBack(ctx);
 
-        // Moses casting with Attack frame on summon/wave
-        S.drawChibiHero(ctx, 56, 315, {
+        // Moses lunging slightly forward when casting spells
+        var mosesLunge = mosesCastTimer > 0 ? Math.sin((mosesCastTimer / 0.5) * Math.PI) * 18 : 0;
+        S.drawChibiHero(ctx, 56 + mosesLunge, 315, {
           kind: 'moses',
           moving: false,
+          jumpY: mosesCastTimer > 0 ? 8 : 0,
           attackTimer: mosesCastTimer,
           height: 96,
           lv: root.COG.State.getPlayerLevel()
@@ -312,27 +326,29 @@
 
         allies.forEach(function (a) {
           var ay = lanesY[a.lane] + 18;
+          var ax = a.x + a.lungeX;
+          var hop = a.dropY + (a.atkTimer > 0 ? Math.sin((a.atkTimer / 0.4) * Math.PI) * 12 : 0);
           if (a.kind === 'angel') {
-            S.drawCuteAngel(ctx, a.x, ay, '#38bdf8', time, 0.92, { attackTimer: a.atkTimer });
+            S.drawCuteAngel(ctx, ax, ay - hop, '#38bdf8', time, 0.92, { attackTimer: a.atkTimer });
           } else if (a.kind === 'miriam') {
-            S.drawChibiHero(ctx, a.x, ay, { kind: 'miriam', moving: a.atkTimer <= 0, attackTimer: a.atkTimer, height: 74 }, time);
+            S.drawChibiHero(ctx, ax, ay, { kind: 'miriam', moving: a.atkTimer <= 0, jumpY: hop, attackTimer: a.atkTimer, height: 74 }, time);
           } else {
-            S.drawChibiHero(ctx, a.x, ay, { kind: 'knight', moving: a.atkTimer <= 0, attackTimer: a.atkTimer, height: 74 }, time);
+            S.drawChibiHero(ctx, ax, ay, { kind: 'knight', moving: a.atkTimer <= 0, jumpY: hop, attackTimer: a.atkTimer, height: 74 }, time);
           }
           if (Sp && Sp.drawGlossyBar && a.maxHp) {
-            Sp.drawGlossyBar(ctx, a.x - 18, ay - 78, 36, 6, a.hp / a.maxHp, '#22c55e', '#1c1917');
+            Sp.drawGlossyBar(ctx, ax - 18, ay - 78 - hop * 0.5, 36, 6, a.hp / a.maxHp, '#22c55e', '#1c1917');
           }
         });
 
         foes.forEach(function (f) {
           var fy = lanesY[f.lane] + 18;
-          S.drawChariot(ctx, f.x, fy, time, f.isBoss, { hitFlash: f.hitFlash > 0 });
+          var fx = f.x + f.recoilX;
+          S.drawChariot(ctx, fx, fy, time, f.isBoss, { hitFlash: f.hitFlash > 0 });
           if (Sp && Sp.drawGlossyBar) {
-            Sp.drawGlossyBar(ctx, f.x - 22, fy - (f.isBoss ? 104 : 80), 44, 7, f.hp / f.maxHp, '#fb7185', '#1c1917');
+            Sp.drawGlossyBar(ctx, fx - 22, fy - (f.isBoss ? 104 : 80), 44, 7, f.hp / f.maxHp, '#fb7185', '#1c1917');
           }
         });
 
-        // Flying Egyptian bronze spears
         spears.forEach(function (sp) {
           var sy = lanesY[sp.lane] - 6;
           ctx.save();

@@ -10,7 +10,7 @@
     appTitle: 'Choice of God · 神の選択',
     appSubtitle: '絵本風マルチジャンル聖書冒険RPG（創世記・出エジプト記）',
     appTagline: 'ステージごとにジャンルが変わるきらめく絵本アドベンチャー！かわいい英雄たちと神の選択を描こう。',
-    metaTitle: 'Choice of God v3.0 (神の選択) — 絵本マルチジャンルRPG',
+    metaTitle: 'Choice of God v5.1 (神の選択) — 4フレーム絵本マルチジャンルRPG',
     ui: {
       galleryTitle: '視点・ステージ自由選択（各ステージ＝新ジャンル！）',
       galleryHint: '好きなキャラクターと聖書の物語をいつでも選べます！第1章エデンの園を守り抜くと最高ボーナス(+5,000点)！',
@@ -124,8 +124,9 @@
     stageUi: {
       eden: {
         stars: '創造の星', bossHp: 'ちび魔王ヘビ', hearts: 'ハート', combo: 'コンボ',
+        autoOn: '🤖 オート戦闘: ON', autoOff: '🎮 オート戦闘: OFF',
         skills: { spin: '🌀 光の旋風斬 (Q)', angelBurst: '✨ 天使光線+回復 (R)' },
-        hint: 'WASD/矢印移動 · Space/クリック3段コンボ · Shift回避 · Q/Rスキル · E会話'
+        hint: 'クリックでその場へ走って収集・会話・攻撃！WASD移動 · Space 3段コンボ · Q/Rスキル'
       },
       ark: {
         timber: 'ゴフェルの木', pitch: 'アスファルト', animals: '乗船動物', arkProg: '方舟完成度',

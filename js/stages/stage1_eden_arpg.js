@@ -8,6 +8,10 @@
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function clamp(v, lo, hi) {
+    return Math.max(lo, Math.min(hi, v));
+  }
+
   root.COG.STAGES.eden = {
     start: function (host, stageObj) {
       var W = host.WIDTH, H = host.HEIGHT;
@@ -18,9 +22,9 @@
       var bonus = root.COG.State.getPowerBonus();
 
       var hero = {
-        x: 480, y: 390, r: 20, speed: 260,
+        x: 480, y: 390, r: 20, speed: 275,
         hp: 7 + Math.floor(bonus.hp / 25), maxHp: 7 + Math.floor(bonus.hp / 25),
-        facingAngle: -Math.PI / 2, moving: false,
+        facingAngle: -Math.PI / 2, moving: false, jumpY: 0,
         attackTimer: 0, attackCd: 0, comboIdx: 0, comboReset: 0, comboHits: 0,
         dashTimer: 0, dashCd: 0, dashVx: 0, dashVy: 0, invuln: 0, dustCd: 0, ghostCd: 0
       };
@@ -29,6 +33,11 @@
       var time = 0;
       var talkedCherubim = false;
       var crossroadsDone = false;
+      var autoBattle = false;
+
+      var moveTarget = null; // { x, y, kind: 'ground'|'enemy'|'npc'|'tree', ref }
+      var pointerHeld = false;
+      var clickRipples = [];
 
       var stars = [
         { x: 280, y: 140, got: false },
@@ -73,7 +82,10 @@
         var s2Dis = angel.burstCd > 0 ? ' disabled' : '';
         var s1Txt = t.skills.spin + (spinCd > 0 ? ' (' + spinCd.toFixed(1) + 's)' : '');
         var s2Txt = t.skills.angelBurst + (angel.burstCd > 0 ? ' (' + angel.burstCd.toFixed(1) + 's)' : '');
+        var autoCls = autoBattle ? 'btn-primary-gold' : 'btn-secondary';
+        var autoTxt = autoBattle ? t.autoOn : t.autoOff;
         var tb = host.setToolbar('<div class="sim-toolbar">' +
+          '<button type="button" class="' + autoCls + '" data-sk="auto">' + autoTxt + '</button>' +
           '<button type="button" class="btn-primary-gold" data-sk="spin"' + s1Dis + '>' + s1Txt + '</button>' +
           '<button type="button" class="btn-secondary" data-sk="angel"' + s2Dis + '>' + s2Txt + '</button>' +
           '</div>');
@@ -82,7 +94,13 @@
         for (var i = 0; i < btns.length; i++) {
           btns[i].addEventListener('click', function () {
             var k = this.getAttribute('data-sk');
-            if (k === 'spin') triggerSpinSkill();
+            this.blur();
+            if (k === 'auto') {
+              autoBattle = !autoBattle;
+              if (autoBattle) moveTarget = null;
+              host.sfx('click');
+              renderToolbar();
+            } else if (k === 'spin') triggerSpinSkill();
             else triggerAngelBurst();
           });
         }
@@ -92,8 +110,8 @@
         en.hp -= dmg;
         en.hitFlash = 0.16;
         var a = Math.atan2(en.y - hero.y, en.x - hero.x);
-        en.x = Math.max(46, Math.min(W - 46, en.x + Math.cos(a) * knock));
-        en.y = Math.max(46, Math.min(H - 46, en.y + Math.sin(a) * knock));
+        en.x = clamp(en.x + Math.cos(a) * knock, 46, W - 46);
+        en.y = clamp(en.y + Math.sin(a) * knock, 46, H - 46);
         hero.comboHits++;
         hero.comboReset = 2.6;
         vfx.spawnBurst(en.x, en.y - 12, isCrit ? '#fb7185' : '#fef08a', isCrit ? 14 : 8, isCrit ? 160 : 110);
@@ -109,6 +127,7 @@
           vfx.spawnRing(en.x, en.y - 10, '#c084fc', 75, 0.45);
           var idx = enemies.indexOf(en);
           if (idx !== -1) enemies.splice(idx, 1);
+          if (moveTarget && moveTarget.ref === en) moveTarget = null;
           host.sfx('chime');
           if (wasBoss) {
             root.COG.State.setEdenRoute('preserved');
@@ -127,13 +146,18 @@
         if (hero.attackCd > 0) return;
         hero.comboIdx = (hero.comboIdx % 3) + 1;
         hero.comboReset = 1.1;
-        hero.attackTimer = 0.24;
+        hero.attackTimer = 0.26;
         hero.attackCd = hero.comboIdx === 3 ? 0.34 : 0.24;
         host.sfx('slash');
 
+        // Noticeable forward micro-lunge + hop on every sword swing!
+        hero.x = clamp(hero.x + Math.cos(hero.facingAngle) * 14, 42, W - 42);
+        hero.y = clamp(hero.y + Math.sin(hero.facingAngle) * 14, 48, H - 42);
+        vfx.spawnDust(hero.x, hero.y + 14, 2);
+
         var isFinisher = hero.comboIdx === 3;
         var dmg = (isFinisher ? 30 : 20) + bonus.atk;
-        var reach = isFinisher ? 96 : 82;
+        var reach = isFinisher ? 98 : 84;
 
         if (isFinisher) {
           heroWaves.push({
@@ -148,7 +172,6 @@
           vfx.spawnRing(hero.x, hero.y - 10, '#facc15', 75, 0.32);
         }
 
-        // Deflect any incoming Temptation Orbs cleanly!
         for (var oi = bossOrbs.length - 1; oi >= 0; oi--) {
           var orb = bossOrbs[oi];
           if (!orb.reflected && dist(hero.x, hero.y, orb.x, orb.y) < 76) {
@@ -176,7 +199,7 @@
       function triggerSpinSkill() {
         if (spinCd > 0) return;
         spinCd = 4.5;
-        hero.attackTimer = 0.35;
+        hero.attackTimer = 0.38;
         hero.comboIdx = 3;
         hero.invuln = Math.max(hero.invuln, 0.45);
         host.sfx('magic');
@@ -220,6 +243,8 @@
 
       function triggerCrossroads() {
         crossroadsDone = true;
+        moveTarget = null;
+        pointerHeld = false;
         host.openDialogue('eden_crossroads', {
           onEffect: function (eff) {
             if (eff.heal) hero.hp = hero.maxHp;
@@ -235,18 +260,24 @@
         });
       }
 
+      function openCherubimDialogue() {
+        talkedCherubim = true;
+        moveTarget = null;
+        pointerHeld = false;
+        host.openDialogue('eden_cherubim', {
+          onEffect: function (eff) {
+            if (eff.heal) hero.hp = hero.maxHp;
+            root.COG.State.addStat(eff);
+          }
+        });
+      }
+
       function tryInteract() {
-        if (dist(hero.x, hero.y, npcCherubim.x, npcCherubim.y) < 75) {
-          talkedCherubim = true;
-          host.openDialogue('eden_cherubim', {
-            onEffect: function (eff) {
-              if (eff.heal) hero.hp = hero.maxHp;
-              root.COG.State.addStat(eff);
-            }
-          });
+        if (dist(hero.x, hero.y, npcCherubim.x, npcCherubim.y) < 82) {
+          openCherubimDialogue();
           return true;
         }
-        if (dist(hero.x, hero.y, treeForb.x, treeForb.y) < 78) {
+        if (dist(hero.x, hero.y, treeForb.x, treeForb.y) < 82) {
           triggerCrossroads();
           return true;
         }
@@ -254,17 +285,47 @@
       }
 
       host.onPointer('pointerdown', function (x, y) {
-        if (dist(x, y, npcCherubim.x, npcCherubim.y) < 65 && dist(hero.x, hero.y, npcCherubim.x, npcCherubim.y) < 110) {
-          tryInteract();
+        clickRipples.push({ x: x, y: y, life: 0.45, maxLife: 0.45 });
+
+        if (dist(x, y, npcCherubim.x, npcCherubim.y) < 58) {
+          if (dist(hero.x, hero.y, npcCherubim.x, npcCherubim.y) < 82) { openCherubimDialogue(); return; }
+          moveTarget = { kind: 'npc', x: npcCherubim.x - 44, y: npcCherubim.y + 8 };
           return;
         }
-        if (dist(x, y, treeForb.x, treeForb.y) < 65 && dist(hero.x, hero.y, treeForb.x, treeForb.y) < 110) {
-          triggerCrossroads();
+        if (dist(x, y, treeForb.x, treeForb.y) < 62) {
+          if (dist(hero.x, hero.y, treeForb.x, treeForb.y) < 82) { triggerCrossroads(); return; }
+          moveTarget = { kind: 'tree', x: treeForb.x + 56, y: treeForb.y + 10 };
           return;
         }
-        hero.facingAngle = Math.atan2(y - hero.y, x - hero.x);
-        slashAttack();
+
+        // Check if clicking an enemy
+        var clickedEnemy = null;
+        var bestED = 56;
+        enemies.forEach(function (en) {
+          var dd = dist(x, y, en.x, en.y);
+          if (dd < bestED) { bestED = dd; clickedEnemy = en; }
+        });
+        if (clickedEnemy) {
+          moveTarget = { kind: 'enemy', ref: clickedEnemy, x: clickedEnemy.x, y: clickedEnemy.y };
+          if (dist(hero.x, hero.y, clickedEnemy.x, clickedEnemy.y) <= 78) {
+            hero.facingAngle = Math.atan2(clickedEnemy.y - hero.y, clickedEnemy.x - hero.x);
+            slashAttack();
+          }
+          return;
+        }
+
+        // Otherwise run directly to clicked spot & hold-to-steer!
+        pointerHeld = true;
+        moveTarget = { kind: 'ground', x: clamp(x, 42, W - 42), y: clamp(y, 50, H - 42) };
       });
+
+      host.onPointer('pointermove', function (x, y) {
+        if (pointerHeld) {
+          moveTarget = { kind: 'ground', x: clamp(x, 42, W - 42), y: clamp(y, 50, H - 42) };
+        }
+      });
+      host.onPointer('pointerup', function () { pointerHeld = false; });
+      host.onPointer('pointerleave', function () { pointerHeld = false; });
 
       renderToolbar();
 
@@ -286,6 +347,7 @@
           hero.comboReset -= dt;
           if (hero.comboReset <= 0) { hero.comboIdx = 0; hero.comboHits = 0; }
         }
+        hero.jumpY = hero.attackTimer > 0 ? Math.sin((hero.attackTimer / 0.26) * Math.PI) * 10 : 0;
 
         if (host.consumeDash() && hero.dashCd <= 0) {
           hero.dashTimer = 0.22; hero.dashCd = 0.85; hero.invuln = 0.38;
@@ -293,6 +355,21 @@
           hero.dashVy = Math.sin(hero.facingAngle) * 540;
           host.sfx('dash');
           vfx.spawnBurst(hero.x, hero.y, '#bae6fd', 8, 90);
+        }
+
+        // Autonomous idle/auto-battle target selection when Auto-Action is ON
+        if (autoBattle && !moveTarget) {
+          var nextStar = stars.find(function (st) { return !st.got; });
+          if (nextStar) {
+            moveTarget = { kind: 'ground', x: nextStar.x, y: nextStar.y };
+          } else if (enemies.length > 0) {
+            var nearestE = enemies[0], bestDistE = dist(hero.x, hero.y, nearestE.x, nearestE.y);
+            enemies.forEach(function (e) {
+              var de = dist(hero.x, hero.y, e.x, e.y);
+              if (de < bestDistE) { bestDistE = de; nearestE = e; }
+            });
+            moveTarget = { kind: 'enemy', ref: nearestE, x: nearestE.x, y: nearestE.y };
+          }
         }
 
         if (hero.dashTimer > 0) {
@@ -311,24 +388,65 @@
           var dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
           var dy = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
           if (dx || dy) {
+            // Manual keyboard steering cancels click target
+            moveTarget = null;
+            pointerHeld = false;
             var l = Math.sqrt(dx * dx + dy * dy);
             hero.x += (dx / l) * hero.speed * dt;
             hero.y += (dy / l) * hero.speed * dt;
             hero.facingAngle = Math.atan2(dy, dx);
             hero.moving = true;
-            hero.dustCd -= dt;
-            if (hero.dustCd <= 0) {
-              hero.dustCd = 0.16;
-              vfx.spawnDust(hero.x, hero.y + 16, 2);
+          } else if (moveTarget) {
+            if (moveTarget.kind === 'enemy') {
+              if (enemies.indexOf(moveTarget.ref) === -1) {
+                moveTarget = null;
+                hero.moving = false;
+              } else {
+                moveTarget.x = moveTarget.ref.x;
+                moveTarget.y = moveTarget.ref.y;
+                var ed = dist(hero.x, hero.y, moveTarget.x, moveTarget.y);
+                hero.facingAngle = Math.atan2(moveTarget.y - hero.y, moveTarget.x - hero.x);
+                if (ed <= 68) {
+                  hero.moving = false;
+                  if (autoBattle && spinCd <= 0 && ed <= 95) triggerSpinSkill();
+                  else slashAttack();
+                } else {
+                  hero.x += ((moveTarget.x - hero.x) / ed) * hero.speed * dt;
+                  hero.y += ((moveTarget.y - hero.y) / ed) * hero.speed * dt;
+                  hero.moving = true;
+                }
+              }
+            } else {
+              var td = dist(hero.x, hero.y, moveTarget.x, moveTarget.y);
+              if (td <= 14) {
+                var reachedKind = moveTarget.kind;
+                moveTarget = null;
+                hero.moving = false;
+                if (reachedKind === 'npc') openCherubimDialogue();
+                else if (reachedKind === 'tree') triggerCrossroads();
+              } else {
+                hero.facingAngle = Math.atan2(moveTarget.y - hero.y, moveTarget.x - hero.x);
+                hero.x += ((moveTarget.x - hero.x) / td) * hero.speed * dt;
+                hero.y += ((moveTarget.y - hero.y) / td) * hero.speed * dt;
+                hero.moving = true;
+              }
             }
           } else {
             hero.moving = false;
           }
         }
-        hero.x = Math.max(40, Math.min(W - 40, hero.x));
-        hero.y = Math.max(45, Math.min(H - 40, hero.y));
 
-        // Autonomous Cherubim helper
+        if (hero.moving) {
+          hero.dustCd -= dt;
+          if (hero.dustCd <= 0) {
+            hero.dustCd = 0.14;
+            vfx.spawnDust(hero.x, hero.y + 16, 2);
+          }
+        }
+
+        hero.x = clamp(hero.x, 40, W - 40);
+        hero.y = clamp(hero.y, 45, H - 40);
+
         angel.x += (hero.x - 48 - angel.x) * Math.min(1, dt * 5);
         angel.y += (hero.y - 36 - angel.y) * Math.min(1, dt * 5);
         if (angel.atkTimer > 0) angel.atkTimer = Math.max(0, angel.atkTimer - dt);
@@ -354,7 +472,11 @@
           if (!tryInteract()) slashAttack();
         }
 
-        // Crescent wave projectiles
+        for (var ri = clickRipples.length - 1; ri >= 0; ri--) {
+          clickRipples[ri].life -= dt;
+          if (clickRipples[ri].life <= 0) clickRipples.splice(ri, 1);
+        }
+
         for (var wi = heroWaves.length - 1; wi >= 0; wi--) {
           var wv = heroWaves[wi];
           wv.x += wv.vx * dt; wv.y += wv.vy * dt; wv.life -= dt;
@@ -370,7 +492,6 @@
           if (wv.life <= 0) heroWaves.splice(wi, 1);
         }
 
-        // Boss Temptation Orbs
         for (var bi = bossOrbs.length - 1; bi >= 0; bi--) {
           var o = bossOrbs[bi];
           o.x += o.vx * dt; o.y += o.vy * dt; o.life -= dt;
@@ -394,8 +515,9 @@
 
         var gotStars = 0;
         stars.forEach(function (st) {
-          if (!st.got && dist(hero.x, hero.y, st.x, st.y) < 36) {
+          if (!st.got && dist(hero.x, hero.y, st.x, st.y) < 38) {
             st.got = true;
+            if (moveTarget && dist(moveTarget.x, moveTarget.y, st.x, st.y) < 28) moveTarget = null;
             host.sfx('chime');
             vfx.addPopup(st.x, st.y - 12, '+100 ★', '#fde047', 1.15);
             vfx.spawnBurst(st.x, st.y, '#fde047', 12, 120);
@@ -424,8 +546,8 @@
               }
             } else if (en.mode === 'dash') {
               en.dashTimer -= dt;
-              en.x = Math.max(50, Math.min(W - 50, en.x + Math.cos(en.dashAng) * 340 * dt));
-              en.y = Math.max(50, Math.min(H - 50, en.y + Math.sin(en.dashAng) * 340 * dt));
+              en.x = clamp(en.x + Math.cos(en.dashAng) * 340 * dt, 50, W - 50);
+              en.y = clamp(en.y + Math.sin(en.dashAng) * 340 * dt, 50, H - 50);
               vfx.addAfterimage('boss_serpent_sheet', 3, en.x, en.y + 16, {
                 height: 118, flipX: hero.x > en.x, duration: 0.18
               });
@@ -507,7 +629,26 @@
           S.drawButterfly(ctx, bf.x + Math.sin(time + idx) * 28, bf.y + Math.cos(time * 1.4 + idx) * 18, bf.col, time);
         });
 
-        // Boss dash telegraph danger indicator
+        // Click-to-move ground ripples & active lock-on indicator
+        clickRipples.forEach(function (rp) {
+          var p = 1 - rp.life / rp.maxLife;
+          ctx.save();
+          ctx.globalAlpha = 1 - p;
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.ellipse(rp.x, rp.y, 10 + p * 26, 5 + p * 12, 0, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        });
+        if (moveTarget) {
+          ctx.save();
+          ctx.strokeStyle = moveTarget.kind === 'enemy' ? '#fb7185' : '#fde047';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.ellipse(moveTarget.x, moveTarget.y + 8, 18 + Math.sin(time * 8) * 3, 8, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
         enemies.forEach(function (en) {
           if (en.isBoss && en.mode === 'windup') {
             ctx.save();
@@ -582,6 +723,7 @@
               kind: 'adam_eve',
               facingAngle: hero.facingAngle,
               moving: hero.moving,
+              jumpY: hero.jumpY,
               attackTimer: hero.attackTimer,
               comboIdx: hero.comboIdx,
               invuln: hero.invuln,
@@ -598,7 +740,6 @@
         drawQueue.sort(function (a, b) { return a.y - b.y; });
         for (var q = 0; q < drawQueue.length; q++) drawQueue[q].fn();
 
-        // Hero Crescent Finisher Waves
         heroWaves.forEach(function (wv) {
           ctx.save();
           ctx.translate(wv.x, wv.y);
@@ -612,7 +753,6 @@
           ctx.restore();
         });
 
-        // Boss Temptation Orbs
         bossOrbs.forEach(function (o) {
           ctx.save();
           ctx.fillStyle = o.reflected ? '#7dd3fc' : '#a855f7';

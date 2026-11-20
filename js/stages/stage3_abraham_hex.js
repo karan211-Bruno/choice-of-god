@@ -44,18 +44,42 @@
         tx: startPos.x, ty: startPos.y,
         prog: 1, moving: false, flipX: false, attackTimer: 0, dustCd: 0
       };
+      var pathQueue = [];
       var turn = 1;
       var faith = 40;
       var food = 40;
       var shrinesLit = 0;
       var time = 0;
       var doveFx = null;
+      var clashFx = null;
 
       function isNeighbor(c1, r1, c2, r2) {
         if (c1 === c2 && r1 === r2) return false;
         var p1 = hexCenter(c1, r1);
         var p2 = hexCenter(c2, r2);
         return Math.hypot(p1.x - p2.x, p1.y - p2.y) < 105;
+      }
+
+      function findHexPath(sc, sr, tc, tr) {
+        if (sc === tc && sr === tr) return [];
+        var q = [{ c: sc, r: sr, path: [] }];
+        var vis = {};
+        vis[sc + ',' + sr] = true;
+        while (q.length > 0) {
+          var cur = q.shift();
+          for (var nr = 0; nr < ROWS; nr++) {
+            for (var nc = 0; nc < COLS; nc++) {
+              var k = nc + ',' + nr;
+              if (!vis[k] && isNeighbor(cur.c, cur.r, nc, nr)) {
+                var nextPath = cur.path.concat([{ c: nc, r: nr }]);
+                if (nc === tc && nr === tr) return nextPath;
+                vis[k] = true;
+                q.push({ c: nc, r: nr, path: nextPath });
+              }
+            }
+          }
+        }
+        return [];
       }
 
       function renderToolbar() {
@@ -68,8 +92,8 @@
         var btns = tb.querySelectorAll('[data-sk]');
         for (var i = 0; i < btns.length; i++) {
           btns[i].addEventListener('click', function () {
-            var sk = this.getAttribute('data-sk');
-            castStrategySkill(sk);
+            this.blur();
+            castStrategySkill(this.getAttribute('data-sk'));
           });
         }
       }
@@ -93,13 +117,14 @@
         var tgt = findNearestRaider();
         if (!tgt) { host.sfx('hit'); return; }
         heroPos.flipX = tgt.pos.x < heroPos.x;
-        heroPos.attackTimer = 0.45;
+        heroPos.attackTimer = 0.48;
 
         if (sk === 'starBolt' && faith >= 8) {
           faith -= 8;
           host.sfx('magic');
           vfx.spawnOrb(heroPos.x, heroPos.y - 24, tgt.pos.x, tgt.pos.y, '#fde047', 0.42, function () {
             tgt.tile.cleared = true;
+            clashFx = { x: tgt.pos.x, y: tgt.pos.y, life: 0.45, maxLife: 0.45 };
             host.shake(6, 0.2);
             vfx.spawnRing(tgt.pos.x, tgt.pos.y, '#fde047', 70, 0.4);
             vfx.spawnBurst(tgt.pos.x, tgt.pos.y, '#fde047', 14);
@@ -121,7 +146,6 @@
           for (var c = 0; c < COLS; c++) {
             var t = tiles[r][c];
             if (t.type === 'raider' && !t.cleared) {
-              // Shift one plain neighbor closer if open
               var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
               for (var i = 0; i < dirs.length; i++) {
                 var nc = c + dirs[i][0], nr = r + dirs[i][1];
@@ -143,8 +167,8 @@
         }
       }
 
-      function stepTo(c, r) {
-        if (heroPos.moving || !isNeighbor(heroHex.c, heroHex.r, c, r)) return;
+      function beginSingleStep(c, r) {
+        if (!isNeighbor(heroHex.c, heroHex.r, c, r)) return;
         heroHex.c = c; heroHex.r = r;
         var dest = hexCenter(c, r);
         heroPos.sx = heroPos.x; heroPos.sy = heroPos.y;
@@ -152,17 +176,21 @@
         heroPos.prog = 0;
         heroPos.moving = true;
         heroPos.flipX = dest.x < heroPos.x;
+        host.sfx('click');
+      }
 
+      function resolveArrivedTile() {
+        var tile = tiles[heroHex.r][heroHex.c];
+        var dest = hexCenter(heroHex.c, heroHex.r);
         turn++;
         food = Math.max(5, food - 2);
-        var tile = tiles[r][c];
-        host.sfx('click');
 
         if (tile.type === 'shrine' && !tile.cleared) {
           tile.cleared = true;
+          pathQueue = [];
           shrinesLit++;
           faith += 15;
-          heroPos.attackTimer = 0.4;
+          heroPos.attackTimer = 0.45;
           host.sfx('magic');
           vfx.spawnRing(dest.x, dest.y, '#7dd3fc', 70, 0.45);
           vfx.spawnBurst(dest.x, dest.y, '#fde047', 12);
@@ -170,6 +198,7 @@
           root.COG.State.addStat({ faith: 3, score: 150 });
         } else if (tile.type === 'lot' && !tile.cleared) {
           tile.cleared = true;
+          pathQueue = [];
           host.openDialogue('abraham_lot', {
             onEffect: function (eff) {
               faith += (eff.faith || 0) * 2;
@@ -178,15 +207,18 @@
           });
         } else if (tile.type === 'raider' && !tile.cleared) {
           tile.cleared = true;
-          heroPos.attackTimer = 0.45;
+          pathQueue = [];
+          heroPos.attackTimer = 0.5;
+          clashFx = { x: dest.x, y: dest.y, life: 0.48, maxLife: 0.48 };
           faith += 10;
           food += 10;
           host.sfx('slash');
-          host.shake(6, 0.2);
+          host.shake(6, 0.22);
           vfx.spawnBurst(dest.x, dest.y, '#fb7185', 14);
           vfx.addPopup(dest.x, dest.y - 28, 'CLASH! +150', '#fde047', 1.15);
           root.COG.State.addStat({ score: 150 });
         } else if (tile.type === 'moriah') {
+          pathQueue = [];
           if (shrinesLit >= 3) {
             host.sfx('win');
             host.win(stageObj.baseScore + faith * 6, 3, {
@@ -212,8 +244,15 @@
         for (var r = 0; r < ROWS; r++) {
           for (var c = 0; c < COLS; c++) {
             var p = hexCenter(c, r);
-            if (Math.hypot(x - p.x, y - p.y) <= HEX_R - 4) {
-              stepTo(c, r);
+            if (Math.hypot(x - p.x, y - p.y) <= HEX_R - 2) {
+              var route = findHexPath(heroHex.c, heroHex.r, c, r);
+              if (route.length > 0) {
+                pathQueue = route;
+                if (!heroPos.moving) {
+                  var first = pathQueue.shift();
+                  beginSingleStep(first.c, first.r);
+                }
+              }
               return;
             }
           }
@@ -223,9 +262,13 @@
       host.onUpdate(function (dt) {
         time += dt;
         if (heroPos.attackTimer > 0) heroPos.attackTimer = Math.max(0, heroPos.attackTimer - dt);
+        if (clashFx) {
+          clashFx.life -= dt;
+          if (clashFx.life <= 0) clashFx = null;
+        }
 
         if (heroPos.moving) {
-          heroPos.prog = Math.min(1, heroPos.prog + dt / 0.38);
+          heroPos.prog = Math.min(1, heroPos.prog + dt / 0.34);
           var ease = 1 - Math.pow(1 - heroPos.prog, 2);
           heroPos.x = heroPos.sx + (heroPos.tx - heroPos.sx) * ease;
           heroPos.y = heroPos.sy + (heroPos.ty - heroPos.sy) * ease;
@@ -234,7 +277,17 @@
             heroPos.dustCd = 0.12;
             vfx.spawnDust(heroPos.x, heroPos.y + 8, 2);
           }
-          if (heroPos.prog >= 1) heroPos.moving = false;
+          if (heroPos.prog >= 1) {
+            heroPos.moving = false;
+            resolveArrivedTile();
+            if (pathQueue.length > 0 && heroPos.attackTimer <= 0.1) {
+              var nxt = pathQueue.shift();
+              beginSingleStep(nxt.c, nxt.r);
+            }
+          }
+        } else if (pathQueue.length > 0 && heroPos.attackTimer <= 0.1) {
+          var nxt2 = pathQueue.shift();
+          beginSingleStep(nxt2.c, nxt2.r);
         }
 
         if (doveFx) {
@@ -305,7 +358,6 @@
 
             if (t.type === 'shrine') {
               if (t.cleared) {
-                // Radiant Starlight Constellation beam linking Shrine -> Mount Moriah!
                 ctx.save();
                 ctx.strokeStyle = 'rgba(253, 224, 71, 0.58)';
                 ctx.lineWidth = 3;
@@ -330,12 +382,35 @@
           }
         }
 
+        // Queued multi-step waypoint dots
+        if (pathQueue.length > 0) {
+          ctx.save();
+          ctx.fillStyle = '#fde047';
+          pathQueue.forEach(function (step) {
+            var sp = hexCenter(step.c, step.r);
+            ctx.beginPath(); ctx.arc(sp.x, sp.y, 5, 0, Math.PI * 2); ctx.fill();
+          });
+          ctx.restore();
+        }
+
         vfx.renderBack(ctx);
 
+        // Defeated Raider knockback flying animation
+        if (clashFx) {
+          var u = 1 - clashFx.life / clashFx.maxLife;
+          S.drawCutePharaohOrGuard(ctx, clashFx.x + u * 55, clashFx.y + 14 - Math.sin(u * Math.PI) * 28, false, time, 0.78, {
+            hitFlash: true,
+            flipX: true,
+            animState: 'attack'
+          });
+        }
+
+        var atkJump = heroPos.attackTimer > 0 ? Math.sin((heroPos.attackTimer / 0.5) * Math.PI) * 14 : 0;
         S.drawChibiHero(ctx, heroPos.x, heroPos.y + 12, {
           kind: 'abraham',
           moving: heroPos.moving,
           flipX: heroPos.flipX,
+          jumpY: atkJump,
           attackTimer: heroPos.attackTimer,
           height: 86,
           lv: root.COG.State.getPlayerLevel()
